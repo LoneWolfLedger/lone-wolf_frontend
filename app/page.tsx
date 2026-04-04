@@ -9,7 +9,7 @@ export default function AthenaOmniUI() {
     const [aiData, setAiData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
-    // Replace this with your actual Render URL
+    // !!! REPLACE WITH YOUR RENDER URL !!! (Make sure there is NO slash at the end)
     const RENDER_API_URL = "https://lonewolf-backend.onrender.com"; 
 
     useEffect(() => {
@@ -39,16 +39,14 @@ export default function AthenaOmniUI() {
             });
             
             setStatus("VERIFYING ON BLOCKCHAIN...");
-            const receipt = await tx.wait(); // Waits for blockchain confirmation
+            const receipt = await tx.wait(); 
             
-            // 1. Send proof to Render Backend
             await fetch(`${RENDER_API_URL}/verify_transaction`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tx_hash: receipt.transactionHash })
             });
 
-            // 2. Fetch the AI Prediction
             const aiResponse = await fetch(`${RENDER_API_URL}/chronos_oracle`);
             const oracleData = await aiResponse.json();
             
@@ -64,7 +62,6 @@ export default function AthenaOmniUI() {
         }
     };
 
-    // UI: THE LEGAL FIREWALL
     if (!hasAgreed) {
         return (
             <div style={{ width: '100vw', minHeight: '100vh', background: 'darkred', color: 'white', padding: '50px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', fontFamily: 'monospace' }}>
@@ -80,7 +77,6 @@ export default function AthenaOmniUI() {
         );
     }
 
-    // UI: THE UNLOCKED AI DASHBOARD (Shows after payment)
     if (isUnlocked && aiData) {
         return (
             <div style={{ width: '100vw', minHeight: '100vh', background: '#050505', color: '#00ff00', padding: '50px', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -90,10 +86,9 @@ export default function AthenaOmniUI() {
                 <div style={{ border: '1px solid #00ff00', padding: '40px', background: 'rgba(0, 255, 0, 0.05)', width: '100%', maxWidth: '800px', borderRadius: '5px' }}>
                     <h2 style={{ color: 'white', borderBottom: '1px solid #333', paddingBottom: '10px' }}>MARKET VECTOR ANALYSIS</h2>
                     <p style={{ fontSize: '1.2rem', marginTop: '20px' }}>TARGET ASSET: <strong style={{ color: 'cyan' }}>{aiData.target_asset}</strong></p>
-                    <p style={{ fontSize: '1.2rem' }}>CHRONOS VECTOR: <strong style={{ color: aiData.chronos_vector.includes("BULL") ? '#00ff00' : 'red' }}>{aiData.chronos_vector}</strong></p>
+                    <p style={{ fontSize: '1.2rem' }}>CHRONOS VECTOR: <strong style={{ color: aiData.chronos_vector?.includes("BULL") ? '#00ff00' : 'red' }}>{aiData.chronos_vector}</strong></p>
                     <p style={{ fontSize: '1.2rem' }}>CHAOS VOLATILITY INDEX: <strong style={{ color: 'yellow' }}>{aiData.chaos_volatility_index}</strong></p>
                     <p style={{ fontSize: '1.2rem' }}>CONFIDENCE LEVEL: <strong style={{ color: 'white' }}>{aiData.accuracy_confidence}</strong></p>
-                    
                     <div style={{ marginTop: '40px', padding: '20px', background: '#111', borderLeft: '5px solid cyan' }}>
                         <p style={{ margin: 0, color: 'cyan' }}>SYSTEM MESSAGE: {aiData.message}</p>
                     </div>
@@ -102,18 +97,16 @@ export default function AthenaOmniUI() {
         );
     }
 
-    // UI: THE PAYMENT GATEWAY (Shows before payment)
     return (
         <div style={{ width: '100vw', minHeight: '100vh', background: 'black', color: 'cyan', padding: '50px', fontFamily: 'monospace', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <h1 style={{ fontSize: '4rem', margin: '0', textShadow: '0 0 20px cyan' }}>LONEWOLF: OMNI UI</h1>
             <h2 style={{ fontSize: '1.5rem', color: 'white', marginTop: '20px' }}>
-                BACKEND STATUS: <span style={{ color: status.includes("OFFLINE") ? 'red' : '#00ff00' }}>{status}</span>
+                BACKEND STATUS: <span style={{ color: status?.includes("OFFLINE") ? 'red' : '#00ff00' }}>{status}</span>
             </h2>
             
             <div style={{ marginTop: '50px', padding: '40px', border: '1px solid cyan', background: 'rgba(0, 255, 255, 0.05)', textAlign: 'center', maxWidth: '600px', borderRadius: '10px' }}>
                 <h3 style={{ color: 'white', fontSize: '1.8rem', marginBottom: '20px' }}>CHRONOS EQUITIES AI</h3>
                 <p style={{ color: 'gray', marginBottom: '40px', fontSize: '1.1rem' }}>The Neural Network is locked. Pay the compute fee to decrypt the market mapping.</p>
-                
                 <button 
                     onClick={handlePayment} 
                     disabled={loading}
