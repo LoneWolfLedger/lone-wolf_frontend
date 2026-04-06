@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'LONEWOLF: OMNI UI',
-  description: 'The Technological Singularity',
+  title: "LONEWOLF | Singularity R&D",
+  description: "Algorithmic Chaos Mapping and Liquid Neural Network Testnet.",
 };
 
 export default function RootLayout({
