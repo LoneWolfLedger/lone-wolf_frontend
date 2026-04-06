@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Stars, Float } from '@react-three/drei';
 
-// --- 3D SINGULARITY CORE (Unchanged, QA Passed) ---
+// --- 3D SINGULARITY CORE ---
 const SingularityCore = ({ isCalibrating }: { isCalibrating: boolean }) => (
     <Float speed={isCalibrating ? 5 : 2} rotationIntensity={isCalibrating ? 3 : 1.5} floatIntensity={2}>
         <Sphere args={[1.5, 64, 64]}>
@@ -43,7 +43,7 @@ export default function AthenaPremiumUI() {
     useEffect(() => { setIsMounted(true); }, []);
     useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
 
-    // Regex Failsafe for Backend Ping (QA Passed)
+    // Regex Failsafe for Backend Ping
     useEffect(() => {
         if (hasAgreed) {
             const safeUrl = RENDER_API_URL.replace(/\/$/, ""); 
@@ -93,7 +93,7 @@ export default function AthenaPremiumUI() {
         } catch (e) { setSystemStatus("API ERROR."); setIsUnlocking(false); }
     }
 
-    // --- SECURE PAYMENT GATEWAYS (QA Passed Error 4001) ---
+    // --- SECURE PAYMENT GATEWAYS ---
     const payWithEVM = async () => {
         const win = window as any; 
         if (!win.ethereum) return alert("MetaMask required for instant Web3 access.");
@@ -169,7 +169,7 @@ export default function AthenaPremiumUI() {
                 </Canvas>
             </div>
 
-            {/* UI LAYER (Mobile Responsive Flex Wrap) */}
+            {/* UI LAYER */}
             <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 
                 {/* TOP BAR */}
@@ -186,11 +186,11 @@ export default function AthenaPremiumUI() {
                     )}
                 </div>
 
-                {/* MAIN CONTENT (Stacks on Mobile, Side-by-Side on PC) */}
-                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'flex-end', padding: '20px', gap: '20px' }}>
+                {/* MAIN CONTENT */}
+                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'flex-start', padding: '20px', gap: '20px', marginTop: '20px' }}>
                     
                     {/* CHAT AGENT PANEL */}
-                    <div style={{ flex: '1 1 350px', maxWidth: '500px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', display: 'flex', flexDirection: 'column', height: '400px' }}>
+                    <div style={{ flex: '1 1 350px', maxWidth: '500px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', display: 'flex', flexDirection: 'column', height: '450px' }}>
                         <div style={{ padding: '15px', borderBottom: '1px solid rgba(0,255,255,0.2)', color: '#00ffff', fontWeight: 'bold' }}>ORACLE COMM-LINK</div>
                         <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {!zkID ? <p style={{ color: 'orange', textAlign: 'center', fontSize: '0.9rem' }}>GENERATE ZK-ID TO INITIATE COMMS</p> : null}
@@ -208,7 +208,7 @@ export default function AthenaPremiumUI() {
                     </div>
 
                     {/* VAULT PANEL */}
-                    <div style={{ flex: '1 1 350px', maxWidth: '500px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', padding: '30px' }}>
+                    <div style={{ flex: '1 1 350px', maxWidth: prediction ? '800px' : '500px', transition: 'max-width 0.5s', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', padding: '30px' }}>
                         {!isReady ? (
                             <div>
                                 <h3 style={{ color: '#00ffff', letterSpacing: '2px', marginBottom: '20px' }}>SYSTEM CALIBRATION</h3>
@@ -218,18 +218,51 @@ export default function AthenaPremiumUI() {
                         ) : !prediction ? (
                             <div>
                                 <h3 style={{ color: 'gold', marginBottom: '15px', letterSpacing: '1px' }}>DECRYPTION VAULT</h3>
+                                <p style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '20px' }}>Instant unlock via Web3. Manual unlock via Web2 Fiat.</p>
+                                
                                 <button onClick={payWithEVM} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: 'linear-gradient(45deg, #f6851b, #e2761b)', color: 'black', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginBottom: '15px', borderRadius: '5px', boxShadow: '0 0 15px rgba(246,133,27,0.3)' }}>{isUnlocking ? "AWAITING SIGNATURE..." : "🦊 WEB3 UNLOCK (0.005 ETH)"}</button>
                                 <button onClick={payWithFiat} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: '#00457C', color: 'white', border: '1px solid #0079C1', cursor: 'pointer', fontWeight: 'bold', borderRadius: '5px' }}>💳 FIAT UNLOCK (PAYPAL)</button>
                                 <p style={{ color: '#888', fontSize: '0.75rem', marginTop: '15px', textAlign: 'center' }}>{systemStatus}</p>
                             </div>
+                        ) : prediction.error ? (
+                            <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>
+                                <h3>{prediction.error}</h3>
+                                <p style={{ fontSize: '0.8rem', color: '#aaa' }}>GitHub Actions is currently compiling the Global Matrix. Please check back in 5 minutes.</p>
+                            </div>
                         ) : (
-                            <div style={{ border: '1px solid #00ff00', padding: '20px', background: 'rgba(0,255,0,0.05)' }}>
-                                <h2 style={{ color: '#00ff00', marginBottom: '15px' }}>TARGET ACQUIRED</h2>
-                                <p style={{ color: 'white', marginBottom: '10px' }}>ASSET: <span style={{ color: '#00ffff' }}>{prediction.asset}</span></p>
-                                <p style={{ color: 'gold', fontSize: '1.2rem', margin: '15px 0', borderBottom: '1px dashed rgba(255,215,0,0.3)', paddingBottom: '10px' }}>VECTOR: {prediction.chronos_vector}</p>
-                                <p style={{ color: '#aaa', fontSize: '0.85rem', margin: '5px 0' }}>RESONANCE: {prediction.spectral_resonance}</p>
-                                <p style={{ color: '#aaa', fontSize: '0.85rem', margin: '5px 0' }}>UNCERTAINTY: {prediction.epistemic_uncertainty}</p>
-                                <p style={{ color: '#00ff00', fontSize: '0.85rem', margin: '5px 0' }}>CONFIDENCE: {prediction.accuracy_confidence}</p>
+                            <div style={{ padding: '10px', height: '450px', overflowY: 'auto' }}>
+                                <h2 style={{ color: '#00ff00', marginBottom: '15px', borderBottom: '1px solid #00ff00', paddingBottom: '10px', fontSize: '1.2rem', letterSpacing: '2px' }}>GLOBAL OMNISCIENCE MATRIX</h2>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                                    {Object.keys(prediction).map((sector) => {
+                                        const data = prediction[sector];
+                                        if (data.error) return null; 
+                                        
+                                        const isBull = data.chronos_vector.includes("BULL");
+                                        const color = isBull ? '#00ff00' : '#ff3333';
+                                        const sentimentColor = data.nlp_sentiment?.includes("BULL") ? '#00ff00' : data.nlp_sentiment?.includes("BEAR") ? '#ff3333' : '#aaaaaa';
+
+                                        return (
+                                            <div key={sector} style={{ border: `1px solid ${color}44`, padding: '15px', background: `linear-gradient(180deg, rgba(0,0,0,0.8) 0%, ${color}11 100%)`, borderRadius: '5px', boxShadow: `0 0 15px ${color}22` }}>
+                                                <p style={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', margin: '0 0 10px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>
+                                                    {sector.replace(/_/g, " ")} <span style={{ color: '#00ffff', fontSize: '0.8rem' }}>({data.asset})</span>
+                                                </p>
+                                                
+                                                <p style={{ color: color, fontSize: '1.1rem', fontWeight: 'bold', margin: '5px 0', textShadow: `0 0 10px ${color}` }}>{data.chronos_vector}</p>
+                                                
+                                                <div style={{ margin: '10px 0', padding: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', borderLeft: `3px solid ${sentimentColor}` }}>
+                                                    <span style={{ fontSize: '0.75rem', color: '#888' }}>NEWS NLP SENTIMENT:</span><br/>
+                                                    <span style={{ fontSize: '0.85rem', color: sentimentColor, fontWeight: 'bold' }}>{data.nlp_sentiment || "NEUTRAL"}</span>
+                                                </div>
+
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#aaa', marginTop: '10px' }}>
+                                                    <span>TARGET: <strong style={{color:'white'}}>{data.projected_target}</strong></span>
+                                                    <span>CONF: <strong style={{color:'white'}}>{data.accuracy_confidence}</strong></span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         )}
                     </div>
