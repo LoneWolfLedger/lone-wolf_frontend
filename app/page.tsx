@@ -15,23 +15,21 @@ const SingularityCore = ({ isCalibrating }: { isCalibrating: boolean }) => (
 
 export default function AthenaPremiumUI() {
     // --- VAULT VARIABLES ---
-    const RENDER_API_URL = "https://lonewolf-backend.onrender.com"; 
-    const EVM_WALLET = "0xf7df69A45146979B44136a2EC57946e556c05172";
-    const PAYPAL_LINK = "https://paypal.me/yourusername/15"; 
-    
-    // --- FOUNDER MASTER KEY ---
-    const FOUNDER_PRIVATE_KEY = "021282"; 
+        // --- ENTERPRISE SECRECY VAULT ---
+    // The code now pulls these from the hidden .env file. GitHub will never see them.
+    const RENDER_API_URL = process.env.NEXT_PUBLIC_RENDER_API_URL || ""; 
+    const EVM_WALLET = process.env.NEXT_PUBLIC_EVM_WALLET || "";
+    const PAYPAL_LINK = process.env.NEXT_PUBLIC_PAYPAL_LINK || ""; 
+    const FOUNDER_PRIVATE_KEY = process.env.NEXT_PUBLIC_FOUNDER_KEY || "";  
 
     // --- STATE MANAGEMENT ---
     const [hasAgreed, setHasAgreed] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [systemStatus, setSystemStatus] = useState("AWAKENING RENDER BACKEND...");
     
-    // ZK-Identity
+    // ZK-Identity & Matrix
     const [secretPhrase, setSecretPhrase] = useState("");
     const [zkID, setZkID] = useState<string | null>(null);
-
-    // Matrix States
     const [isCalibrating, setIsCalibrating] = useState(false);
     const [calibrationProgress, setCalibrationProgress] = useState(0);
     const [isReady, setIsReady] = useState(false);
@@ -43,9 +41,13 @@ export default function AthenaPremiumUI() {
     const [chatHistory, setChatHistory] = useState<{role: string, msg: string}[]>([]);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
+    // Live News Stream
+    const [liveNews, setLiveNews] = useState<any[]>([]);
+
     useEffect(() => { setIsMounted(true); }, []);
     useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
 
+    // Fetch Backend Ping & Live Financial News on Load
     useEffect(() => {
         if (hasAgreed) {
             const safeUrl = RENDER_API_URL.replace(/\/$/, ""); 
@@ -53,6 +55,14 @@ export default function AthenaPremiumUI() {
                 .then(res => res.json())
                 .then(data => setSystemStatus(data.status || "SINGULARITY ONLINE"))
                 .catch(err => setSystemStatus("SINGULARITY ONLINE (Bypassed Ping)"));
+
+            // 0$ Live News Hack (Fetches Yahoo Finance RSS via free JSON proxy)
+            fetch('https://api.rss2json.com/v1/api.json?rss_url=https://finance.yahoo.com/news/rssindex')
+                .then(res => res.json())
+                .then(data => {
+                    if(data && data.items) setLiveNews(data.items.slice(0, 8));
+                })
+                .catch(err => console.log("Satellite News Link Severed"));
         }
     }, [hasAgreed]);
 
@@ -94,7 +104,6 @@ export default function AthenaPremiumUI() {
         } catch (e) { setSystemStatus("API ERROR."); setIsUnlocking(false); }
     }
 
-    // --- FOUNDER SECRECY OVERRIDE ---
     const handleFounderOverride = () => {
         const attempt = prompt("ENTER OMEGA CLEARANCE CODE:");
         if (attempt === FOUNDER_PRIVATE_KEY) {
@@ -102,11 +111,9 @@ export default function AthenaPremiumUI() {
             unlockAI();
         } else if (attempt !== null) {
             alert("ACCESS DENIED. UNAUTHORIZED ENTITY.");
-            setSystemStatus("UNAUTHORIZED OVERRIDE ATTEMPT LOGGED.");
         }
     };
 
-    // --- SECURE PAYMENT GATEWAYS ---
     const payWithEVM = async () => {
         const win = window as any; 
         if (!win.ethereum) return alert("MetaMask required for instant Web3 access.");
@@ -183,9 +190,9 @@ export default function AthenaPremiumUI() {
 
             <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 
+                {/* TOP BAR */}
                 <div style={{ padding: '20px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(0,255,255,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                     <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#00ffff', textShadow: '0 0 10px rgba(0,255,255,0.5)' }}>LONEWOLF // APEX_LEDGER</h1>
-                    
                     {!zkID ? (
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                             <input type="password" placeholder="Secret Passphrase" value={secretPhrase} onChange={(e) => setSecretPhrase(e.target.value)} style={{ background: '#111', color: '#fff', border: '1px solid rgba(0,255,255,0.5)', padding: '8px', outline: 'none' }} />
@@ -196,7 +203,8 @@ export default function AthenaPremiumUI() {
                     )}
                 </div>
 
-                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'flex-start', padding: '20px', gap: '20px', marginTop: '20px' }}>
+                {/* MAIN CONTENT */}
+                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'flex-start', padding: '20px', gap: '20px', marginTop: '10px' }}>
                     
                     {/* CHAT AGENT */}
                     <div style={{ flex: '1 1 350px', maxWidth: '500px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', display: 'flex', flexDirection: 'column', height: '450px' }}>
@@ -216,8 +224,8 @@ export default function AthenaPremiumUI() {
                         </div>
                     </div>
 
-                    {/* VAULT PANEL */}
-                    <div style={{ flex: '1 1 350px', maxWidth: prediction ? '800px' : '500px', transition: 'max-width 0.5s', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', padding: '30px' }}>
+                    {/* VAULT PANEL OR GLOBAL MATRIX */}
+                    <div style={{ flex: '1 1 350px', maxWidth: prediction ? '100%' : '500px', transition: 'max-width 0.5s', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', padding: '30px' }}>
                         {!isReady ? (
                             <div>
                                 <h3 style={{ color: '#00ffff', letterSpacing: '2px', marginBottom: '20px' }}>SYSTEM CALIBRATION</h3>
@@ -226,62 +234,35 @@ export default function AthenaPremiumUI() {
                             </div>
                         ) : !prediction ? (
                             <div>
-                                {/* THE SECRECY OVERRIDE IS RIGHT HERE ON THE H3 TEXT */}
-                                <h3 
-    onClick={(e) => {
-        e.stopPropagation(); // Forces the click to bypass the 3D canvas
-        handleFounderOverride();
-    }} 
-    style={{ 
-        cursor: 'pointer', 
-        color: 'gold', 
-        marginBottom: '15px', 
-        letterSpacing: '1px',
-        position: 'relative', 
-        zIndex: 9999, // Brings it to the absolute front of the screen
-        display: 'inline-block',
-        borderBottom: '1px dashed gold'
-    }}
->
-    DECRYPTION VAULT 🔐
-</h3>
+                                <h3 onClick={(e) => { e.stopPropagation(); handleFounderOverride(); }} style={{ cursor: 'pointer', color: 'gold', marginBottom: '15px', letterSpacing: '1px', display: 'inline-block', position: 'relative', zIndex: 9999, borderBottom: '1px dashed gold' }}>DECRYPTION VAULT 🔐</h3>
                                 <p style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '20px' }}>Instant unlock via Web3. Manual unlock via Web2 Fiat.</p>
                                 
                                 <button onClick={payWithEVM} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: 'linear-gradient(45deg, #f6851b, #e2761b)', color: 'black', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginBottom: '15px', borderRadius: '5px', boxShadow: '0 0 15px rgba(246,133,27,0.3)' }}>{isUnlocking ? "AWAITING SIGNATURE..." : "🦊 WEB3 UNLOCK (0.005 ETH)"}</button>
                                 <button onClick={payWithFiat} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: '#00457C', color: 'white', border: '1px solid #0079C1', cursor: 'pointer', fontWeight: 'bold', borderRadius: '5px' }}>💳 FIAT UNLOCK (PAYPAL)</button>
                                 <p style={{ color: '#888', fontSize: '0.75rem', marginTop: '15px', textAlign: 'center' }}>{systemStatus}</p>
                             </div>
-                        ) : prediction.error ? (
+                        ) : prediction.error || Object.keys(prediction).length === 0 ? (
                             <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>
-                                <h3>{prediction.error}</h3>
-                                <p style={{ fontSize: '0.8rem', color: '#aaa' }}>GitHub Actions is currently compiling the Global Matrix. Please check back in 5 minutes.</p>
+                                <h3>MATRIX COMPILING</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#aaa' }}>The Oracle memory file is empty or missing from the Render server. Ensure GitHub Actions has completed its run, then clear Render cache.</p>
                             </div>
                         ) : (
-                            <div style={{ padding: '10px', height: '450px', overflowY: 'auto' }}>
+                            <div style={{ padding: '10px', height: '500px', overflowY: 'auto' }}>
                                 <h2 style={{ color: '#00ff00', marginBottom: '15px', borderBottom: '1px solid #00ff00', paddingBottom: '10px', fontSize: '1.2rem', letterSpacing: '2px' }}>GLOBAL OMNISCIENCE MATRIX</h2>
-                                
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                                     {Object.keys(prediction).map((sector) => {
                                         const data = prediction[sector];
-                                        if (data.error) return null; 
-                                        
-                                        const isBull = data.chronos_vector.includes("BULL");
+                                        if (!data || data.error) return null; 
+                                        const isBull = data.chronos_vector?.includes("BULL");
                                         const color = isBull ? '#00ff00' : '#ff3333';
-                                        const sentimentColor = data.nlp_sentiment?.includes("BULL") ? '#00ff00' : data.nlp_sentiment?.includes("BEAR") ? '#ff3333' : '#aaaaaa';
-
                                         return (
                                             <div key={sector} style={{ border: `1px solid ${color}44`, padding: '15px', background: `linear-gradient(180deg, rgba(0,0,0,0.8) 0%, ${color}11 100%)`, borderRadius: '5px', boxShadow: `0 0 15px ${color}22` }}>
-                                                <p style={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', margin: '0 0 10px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>
-                                                    {sector.replace(/_/g, " ")} <span style={{ color: '#00ffff', fontSize: '0.8rem' }}>({data.asset})</span>
-                                                </p>
-                                                
-                                                <p style={{ color: color, fontSize: '1.1rem', fontWeight: 'bold', margin: '5px 0', textShadow: `0 0 10px ${color}` }}>{data.chronos_vector}</p>
-                                                
-                                                <div style={{ margin: '10px 0', padding: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', borderLeft: `3px solid ${sentimentColor}` }}>
-                                                    <span style={{ fontSize: '0.75rem', color: '#888' }}>NEWS NLP SENTIMENT:</span><br/>
-                                                    <span style={{ fontSize: '0.85rem', color: sentimentColor, fontWeight: 'bold' }}>{data.nlp_sentiment || "NEUTRAL"}</span>
+                                                <p style={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', margin: '0 0 10px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>{sector.replace(/_/g, " ")} <span style={{ color: '#00ffff', fontSize: '0.8rem' }}>({data.asset})</span></p>
+                                                <p style={{ color: color, fontSize: '1.1rem', fontWeight: 'bold', margin: '5px 0' }}>{data.chronos_vector}</p>
+                                                <div style={{ margin: '10px 0', padding: '5px', background: 'rgba(255,255,255,0.05)', borderLeft: `3px solid ${data.nlp_sentiment?.includes("BULL") ? '#00ff00' : '#ff3333'}` }}>
+                                                    <span style={{ fontSize: '0.75rem', color: '#888' }}>NEWS SENTIMENT:</span><br/>
+                                                    <span style={{ fontSize: '0.85rem', color: 'white' }}>{data.nlp_sentiment || "NEUTRAL"}</span>
                                                 </div>
-
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#aaa', marginTop: '10px' }}>
                                                     <span>TARGET: <strong style={{color:'white'}}>{data.projected_target}</strong></span>
                                                     <span>CONF: <strong style={{color:'white'}}>{data.accuracy_confidence}</strong></span>
@@ -294,6 +275,23 @@ export default function AthenaPremiumUI() {
                         )}
                     </div>
                 </div>
+
+                {/* --- LIVE FINANCIAL NEWS MARQUEE (SHOWS BEFORE UNLOCK) --- */}
+                {!prediction && (
+                    <div style={{ width: '100%', background: 'rgba(0,0,0,0.8)', borderTop: '1px solid #333', padding: '15px 20px', marginTop: 'auto', position: 'relative', zIndex: 10 }}>
+                        <h4 style={{ color: '#00ffff', margin: '0 0 10px 0', fontSize: '0.9rem', letterSpacing: '1px' }}>📡 GLOBAL SATELLITE FEED (YAHOO FINANCE)</h4>
+                        <div style={{ display: 'flex', overflowX: 'auto', gap: '20px', paddingBottom: '10px', scrollbarWidth: 'thin' }}>
+                            {liveNews.length > 0 ? liveNews.map((news, i) => (
+                                <div key={i} style={{ minWidth: '300px', background: '#111', padding: '10px', borderLeft: '2px solid #00ffff', fontSize: '0.85rem' }}>
+                                    <p style={{ color: 'white', margin: '0 0 8px 0', lineHeight: '1.4' }}>{news.title}</p>
+                                    <a href={news.link} target="_blank" rel="noreferrer" style={{ color: '#00ffff', textDecoration: 'none', fontWeight: 'bold' }}>[READ TRANSMISSION]</a>
+                                </div>
+                            )) : (
+                                <span style={{ color: '#888', fontStyle: 'italic' }}>Intercepting satellite data streams...</span>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
