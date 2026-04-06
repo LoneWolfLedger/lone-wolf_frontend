@@ -227,7 +227,24 @@ export default function AthenaPremiumUI() {
                         ) : !prediction ? (
                             <div>
                                 {/* THE SECRECY OVERRIDE IS RIGHT HERE ON THE H3 TEXT */}
-                                <h3 onClick={handleFounderOverride} style={{ cursor: 'pointer', color: 'gold', marginBottom: '15px', letterSpacing: '1px' }}>DECRYPTION VAULT</h3>
+                                <h3 
+    onClick={(e) => {
+        e.stopPropagation(); // Forces the click to bypass the 3D canvas
+        handleFounderOverride();
+    }} 
+    style={{ 
+        cursor: 'pointer', 
+        color: 'gold', 
+        marginBottom: '15px', 
+        letterSpacing: '1px',
+        position: 'relative', 
+        zIndex: 9999, // Brings it to the absolute front of the screen
+        display: 'inline-block',
+        borderBottom: '1px dashed gold'
+    }}
+>
+    DECRYPTION VAULT 🔐
+</h3>
                                 <p style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '20px' }}>Instant unlock via Web3. Manual unlock via Web2 Fiat.</p>
                                 
                                 <button onClick={payWithEVM} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: 'linear-gradient(45deg, #f6851b, #e2761b)', color: 'black', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginBottom: '15px', borderRadius: '5px', boxShadow: '0 0 15px rgba(246,133,27,0.3)' }}>{isUnlocking ? "AWAITING SIGNATURE..." : "🦊 WEB3 UNLOCK (0.005 ETH)"}</button>
