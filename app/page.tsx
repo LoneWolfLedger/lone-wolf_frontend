@@ -17,7 +17,10 @@ export default function AthenaPremiumUI() {
     // --- VAULT VARIABLES ---
     const RENDER_API_URL = "https://lonewolf-backend.onrender.com"; 
     const EVM_WALLET = "0xf7df69A45146979B44136a2EC57946e556c05172";
-    const PAYPAL_LINK = "https://paypal.me/yourusername/15"; // CHANGE THIS
+    const PAYPAL_LINK = "https://paypal.me/yourusername/15"; 
+    
+    // --- FOUNDER MASTER KEY ---
+    const FOUNDER_PRIVATE_KEY = "021282"; 
 
     // --- STATE MANAGEMENT ---
     const [hasAgreed, setHasAgreed] = useState(false);
@@ -43,7 +46,6 @@ export default function AthenaPremiumUI() {
     useEffect(() => { setIsMounted(true); }, []);
     useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
 
-    // Regex Failsafe for Backend Ping
     useEffect(() => {
         if (hasAgreed) {
             const safeUrl = RENDER_API_URL.replace(/\/$/, ""); 
@@ -54,7 +56,6 @@ export default function AthenaPremiumUI() {
         }
     }, [hasAgreed]);
 
-    // --- ZERO KNOWLEDGE HASHING ---
     const generateZKProof = async () => {
         if (!secretPhrase) return alert("Enter a phrase to generate ZK-ID.");
         const encoder = new TextEncoder();
@@ -92,6 +93,18 @@ export default function AthenaPremiumUI() {
             setIsUnlocking(false);
         } catch (e) { setSystemStatus("API ERROR."); setIsUnlocking(false); }
     }
+
+    // --- FOUNDER SECRECY OVERRIDE ---
+    const handleFounderOverride = () => {
+        const attempt = prompt("ENTER OMEGA CLEARANCE CODE:");
+        if (attempt === FOUNDER_PRIVATE_KEY) {
+            setSystemStatus("FOUNDER OVERRIDE ACCEPTED. DECRYPTING MATRIX...");
+            unlockAI();
+        } else if (attempt !== null) {
+            alert("ACCESS DENIED. UNAUTHORIZED ENTITY.");
+            setSystemStatus("UNAUTHORIZED OVERRIDE ATTEMPT LOGGED.");
+        }
+    };
 
     // --- SECURE PAYMENT GATEWAYS ---
     const payWithEVM = async () => {
@@ -156,7 +169,6 @@ export default function AthenaPremiumUI() {
 
     return (
         <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#000', color: '#fff', fontFamily: 'monospace', overflowY: 'auto', overflowX: 'hidden' }}>
-            {/* 3D BACKGROUND */}
             <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
                 <Canvas camera={{ position: [0, 0, 5] }}>
                     <Suspense fallback={null}>
@@ -169,10 +181,8 @@ export default function AthenaPremiumUI() {
                 </Canvas>
             </div>
 
-            {/* UI LAYER */}
             <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 
-                {/* TOP BAR */}
                 <div style={{ padding: '20px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(0,255,255,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                     <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#00ffff', textShadow: '0 0 10px rgba(0,255,255,0.5)' }}>LONEWOLF // APEX_LEDGER</h1>
                     
@@ -186,10 +196,9 @@ export default function AthenaPremiumUI() {
                     )}
                 </div>
 
-                {/* MAIN CONTENT */}
                 <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'flex-start', padding: '20px', gap: '20px', marginTop: '20px' }}>
                     
-                    {/* CHAT AGENT PANEL */}
+                    {/* CHAT AGENT */}
                     <div style={{ flex: '1 1 350px', maxWidth: '500px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', display: 'flex', flexDirection: 'column', height: '450px' }}>
                         <div style={{ padding: '15px', borderBottom: '1px solid rgba(0,255,255,0.2)', color: '#00ffff', fontWeight: 'bold' }}>ORACLE COMM-LINK</div>
                         <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -217,7 +226,8 @@ export default function AthenaPremiumUI() {
                             </div>
                         ) : !prediction ? (
                             <div>
-                                <h3 style={{ color: 'gold', marginBottom: '15px', letterSpacing: '1px' }}>DECRYPTION VAULT</h3>
+                                {/* THE SECRECY OVERRIDE IS RIGHT HERE ON THE H3 TEXT */}
+                                <h3 onClick={handleFounderOverride} style={{ cursor: 'pointer', color: 'gold', marginBottom: '15px', letterSpacing: '1px' }}>DECRYPTION VAULT</h3>
                                 <p style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '20px' }}>Instant unlock via Web3. Manual unlock via Web2 Fiat.</p>
                                 
                                 <button onClick={payWithEVM} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: 'linear-gradient(45deg, #f6851b, #e2761b)', color: 'black', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginBottom: '15px', borderRadius: '5px', boxShadow: '0 0 15px rgba(246,133,27,0.3)' }}>{isUnlocking ? "AWAITING SIGNATURE..." : "🦊 WEB3 UNLOCK (0.005 ETH)"}</button>
