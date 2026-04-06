@@ -49,7 +49,7 @@ export default function AthenaOmniUI() {
 
     useEffect(() => {
         if (hasAgreed && RENDER_API_URL) {
-            fetch(`${RENDER_API_URL}/ping`)
+            fetch(`${RENDER_API_URL.replace(/\/$/, "")}/ping`)
                 .then(res => res.json())
                 .then(data => setSystemStatus("SERVER CONNECTED"))
                 .catch(err => setSystemStatus("CONNECTION FAILED"));
@@ -76,7 +76,7 @@ export default function AthenaOmniUI() {
     const unlockAI = async (method: string) => {
         setSystemStatus(`DECRYPTING AI VIA ${method}...`);
         try {
-            const response = await fetch(`${RENDER_API_URL}/oracle`);
+            const response = await fetch(`${RENDER_API_URL.replace(/\/$/, "")}/oracle`);
             const aiData = await response.json();
             setPrediction(aiData);
             setSystemStatus("ORACLE UNLOCKED");
