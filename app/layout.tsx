@@ -1,9 +1,6 @@
-import type { Metadata } from "next";
-import "./globals.css";
-
-export const metadata: Metadata = {
-  title: "LONEWOLF | Singularity R&D",
-  description: "Algorithmic Chaos Mapping and Liquid Neural Network Testnet.",
+export const metadata = {
+  title: "LONEWOLF | Singularity",
+  description: "Algorithmic Chaos Mapping",
 };
 
 export default function RootLayout({
@@ -13,7 +10,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0, backgroundColor: 'black' }}>
+      <body style={{ margin: 0, padding: 0, backgroundColor: 'black', overflow: 'hidden' }}>
         {children}
       </body>
     </html>
