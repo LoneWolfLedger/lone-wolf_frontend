@@ -78,20 +78,37 @@ export default function AthenaPremiumUI() {
         }, 2000);
     }
 
-    const payWithEVM = async () => {
+        const payWithEVM = async () => {
         const win = window as any; 
-        if (!win.ethereum) return alert("MetaMask extension required to unlock Neural Core.");
+        if (!win.ethereum) {
+            setSystemStatus("ERROR: METAMASK NOT DETECTED.");
+            return alert("MetaMask extension required to unlock Neural Core.");
+        }
         try {
             setIsUnlocking(true);
             const provider = new ethers.providers.Web3Provider(win.ethereum);
             await provider.send("eth_requestAccounts", []);
             const signer = provider.getSigner();
-            const tx = await signer.sendTransaction({ to: EVM_WALLET, value: ethers.utils.parseEther("0.005") });
-            setSystemStatus("VERIFYING BLOCKCHAIN... DO NOT CLOSE PAGE.");
-            await tx.wait();
+            
+            setSystemStatus("AWAITING USER SIGNATURE...");
+            const tx = await signer.sendTransaction({ 
+                to: EVM_WALLET, 
+                value: ethers.utils.parseEther("0.005") 
+            });
+            
+            setSystemStatus("MINING TRANSACTION... DO NOT CLOSE PAGE.");
+            await tx.wait(); // Waits for the blockchain to physically mine the block
+            
             await unlockAI();
-        } catch (error) { 
-            setSystemStatus("TRANSACTION CANCELLED"); 
+        } catch (error: any) { 
+            // ADVANCED ERROR HANDLING
+            if (error.code === 4001) {
+                setSystemStatus("TRANSACTION REJECTED BY USER.");
+            } else if (error.code === 'INSUFFICIENT_FUNDS') {
+                setSystemStatus("ERROR: INSUFFICIENT ETH BALANCE.");
+            } else {
+                setSystemStatus("NETWORK ERROR. TRY AGAIN.");
+            }
             setIsUnlocking(false); 
         }
     };
