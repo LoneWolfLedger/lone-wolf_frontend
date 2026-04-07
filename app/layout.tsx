@@ -1,36 +1,40 @@
 import './globals.css';
-import Hologram from './components/Hologram';
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'LONEWOLF | Institutional Swarm',
-  description: 'Post-Quantum Decentralized Quant Matrix',
+  title: 'LONEWOLF | Institutional',
+  description: 'Decentralized Quant Terminal',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0, fontFamily: 'system-ui, sans-serif', background: '#0f172a', color: '#f8fafc', overflow: 'hidden' }}>
-        <Hologram />
+      <body style={{ margin: 0, padding: 0, fontFamily: 'system-ui, -apple-system, sans-serif', background: '#181a20', color: '#EAECEF', overflow: 'hidden' }}>
         
         <div style={{ display: 'flex', height: '100vh', position: 'relative', zIndex: 10 }}>
-          <div style={{ width: '260px', background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(20px)', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', padding: '30px 20px' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '2px', color: '#ffffff', marginBottom: '10px' }}>LONEWOLF</div>
-            <div style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '50px' }}>POST-QUANTUM ORACLE</div>
+          {/* SOLID INSTITUTIONAL SIDEBAR */}
+          <div style={{ width: '260px', background: '#1e2329', borderRight: '1px solid #2B3139', display: 'flex', flexDirection: 'column', padding: '30px 20px' }}>
             
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 }}>
-              <Link href="/" style={{ color: '#cbd5e1', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 'bold', padding: '10px', borderRadius: '8px', transition: '0.2s' }}>
-                ⎈ TERMINAL MATRIX
+            {/* LOGO */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }}>
+              <div style={{ width: '24px', height: '24px', background: '#FCD535', borderRadius: '4px' }}></div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#EAECEF', letterSpacing: '1px' }}>LONEWOLF</div>
+            </div>
+            
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+              <div style={{ fontSize: '0.75rem', color: '#848E9C', fontWeight: '600', marginBottom: '10px', marginTop: '10px' }}>PLATFORM</div>
+              <Link href="/" style={{ color: '#EAECEF', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600', padding: '12px 15px', borderRadius: '8px', transition: '0.2s', background: '#2B3139' }}>
+                📊 Markets Matrix
               </Link>
-              <Link href="/investors" style={{ color: '#cbd5e1', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 'bold', padding: '10px', borderRadius: '8px', transition: '0.2s' }}>
-                🏛️ INVESTOR RELATIONS
+              <Link href="/investors" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600', padding: '12px 15px', borderRadius: '8px', transition: '0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#EAECEF'} onMouseOut={e => e.currentTarget.style.color = '#848E9C'}>
+                🏛️ Investor Relations
               </Link>
             </nav>
             
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '10px', fontWeight: 'bold' }}>SYSTEM DIAGNOSTICS</div>
-              <a href="mailto:founder@lonewolf.com?subject=Platform Feedback" style={{ display: 'block', background: 'rgba(255,255,255,0.05)', color: '#f8fafc', textDecoration: 'none', fontSize: '0.8rem', textAlign: 'center', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
-                SUBMIT FEEDBACK ✉️
+            {/* SUPPORT */}
+            <div style={{ borderTop: '1px solid #2B3139', paddingTop: '20px' }}>
+              <a href="mailto:founder@lonewolf.com?subject=Support" style={{ display: 'block', background: 'transparent', color: '#848E9C', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600', textAlign: 'center', padding: '12px', borderRadius: '8px', border: '1px solid #2B3139', cursor: 'pointer', transition: '0.2s' }} onMouseOver={e => {e.currentTarget.style.color = '#FCD535'; e.currentTarget.style.borderColor = '#FCD535'}} onMouseOut={e => {e.currentTarget.style.color = '#848E9C'; e.currentTarget.style.borderColor = '#2B3139'}}>
+                🎧 Contact Support
               </a>
             </div>
           </div>
