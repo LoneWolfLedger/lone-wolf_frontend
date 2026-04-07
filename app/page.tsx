@@ -15,12 +15,10 @@ const SingularityCore = ({ isCalibrating }: { isCalibrating: boolean }) => (
 
 export default function AthenaPremiumUI() {
     // --- VAULT VARIABLES ---
-        // --- ENTERPRISE SECRECY VAULT ---
-    // The code now pulls these from the hidden .env file. GitHub will never see them.
     const RENDER_API_URL = process.env.NEXT_PUBLIC_RENDER_API_URL || ""; 
     const EVM_WALLET = process.env.NEXT_PUBLIC_EVM_WALLET || "";
     const PAYPAL_LINK = process.env.NEXT_PUBLIC_PAYPAL_LINK || ""; 
-    const FOUNDER_PRIVATE_KEY = process.env.NEXT_PUBLIC_FOUNDER_KEY || "";  
+    const FOUNDER_PRIVATE_KEY = process.env.NEXT_PUBLIC_FOUNDER_KEY || ""; 
 
     // --- STATE MANAGEMENT ---
     const [hasAgreed, setHasAgreed] = useState(false);
@@ -36,18 +34,15 @@ export default function AthenaPremiumUI() {
     const [isUnlocking, setIsUnlocking] = useState(false);
     const [prediction, setPrediction] = useState<any>(null);
 
-    // Chat Agent
+    // Chat & News
     const [chatInput, setChatInput] = useState("");
     const [chatHistory, setChatHistory] = useState<{role: string, msg: string}[]>([]);
     const chatEndRef = useRef<HTMLDivElement>(null);
-
-    // Live News Stream
     const [liveNews, setLiveNews] = useState<any[]>([]);
 
     useEffect(() => { setIsMounted(true); }, []);
     useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
 
-    // Fetch Backend Ping & Live Financial News on Load
     useEffect(() => {
         if (hasAgreed) {
             const safeUrl = RENDER_API_URL.replace(/\/$/, ""); 
@@ -56,15 +51,13 @@ export default function AthenaPremiumUI() {
                 .then(data => setSystemStatus(data.status || "SINGULARITY ONLINE"))
                 .catch(err => setSystemStatus("SINGULARITY ONLINE (Bypassed Ping)"));
 
-            // 0$ Live News Hack (Fetches Yahoo Finance RSS via free JSON proxy)
+            // Live Bloomberg/MoneyControl Style Ticker Feed
             fetch('https://api.rss2json.com/v1/api.json?rss_url=https://finance.yahoo.com/news/rssindex')
                 .then(res => res.json())
-                .then(data => {
-                    if(data && data.items) setLiveNews(data.items.slice(0, 8));
-                })
+                .then(data => { if(data && data.items) setLiveNews(data.items.slice(0, 10)); })
                 .catch(err => console.log("Satellite News Link Severed"));
         }
-    }, [hasAgreed]);
+    }, [hasAgreed, RENDER_API_URL]);
 
     const generateZKProof = async () => {
         if (!secretPhrase) return alert("Enter a phrase to generate ZK-ID.");
@@ -101,42 +94,15 @@ export default function AthenaPremiumUI() {
             setPrediction(data);
             setSystemStatus("ORACLE DECRYPTED");
             setIsUnlocking(false);
-        } catch (e) { setSystemStatus("API ERROR."); setIsUnlocking(false); }
+        } catch (e) { setSystemStatus("API ERROR. CHECK RENDER."); setIsUnlocking(false); }
     }
 
     const handleFounderOverride = () => {
         const attempt = prompt("ENTER OMEGA CLEARANCE CODE:");
         if (attempt === FOUNDER_PRIVATE_KEY) {
-            setSystemStatus("FOUNDER OVERRIDE ACCEPTED. DECRYPTING MATRIX...");
+            setSystemStatus("FOUNDER OVERRIDE ACCEPTED.");
             unlockAI();
-        } else if (attempt !== null) {
-            alert("ACCESS DENIED. UNAUTHORIZED ENTITY.");
-        }
-    };
-
-    const payWithEVM = async () => {
-        const win = window as any; 
-        if (!win.ethereum) return alert("MetaMask required for instant Web3 access.");
-        try {
-            setIsUnlocking(true);
-            const provider = new ethers.providers.Web3Provider(win.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            const signer = provider.getSigner();
-            setSystemStatus("AWAITING USER SIGNATURE...");
-            const tx = await signer.sendTransaction({ to: EVM_WALLET, value: ethers.utils.parseEther("0.005") });
-            setSystemStatus("VERIFYING BLOCKCHAIN... DO NOT CLOSE.");
-            await tx.wait();
-            await unlockAI();
-        } catch (error: any) { 
-            if (error.code === 4001) setSystemStatus("TRANSACTION REJECTED BY USER.");
-            else setSystemStatus("NETWORK ERROR. TRY AGAIN.");
-            setIsUnlocking(false); 
-        }
-    };
-
-    const payWithFiat = () => {
-        window.open(PAYPAL_LINK, "_blank");
-        alert("FIAT GATEWAY: Send payment, then email Founder with your ZK-ID for manual unlock (Takes 1-12 hours). Use Web3 for INSTANT unlock.");
+        } else if (attempt !== null) alert("ACCESS DENIED.");
     };
 
     const sendChatMessage = async () => {
@@ -144,154 +110,219 @@ export default function AthenaPremiumUI() {
         const newHistory = [...chatHistory, { role: "USER", msg: chatInput }];
         setChatHistory(newHistory);
         setChatInput("");
-        setSystemStatus("TRANSMITTING TO OMEGA...");
         try {
             const safeUrl = RENDER_API_URL.replace(/\/$/, ""); 
             const res = await fetch(`${safeUrl}/chat`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+                method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: chatInput, zk_id: zkID })
             });
             const data = await res.json();
             setChatHistory([...newHistory, { role: "CHRONOS", msg: data.reply }]);
-            setSystemStatus("TRANSMISSION RECEIVED.");
         } catch (e) { setChatHistory([...newHistory, { role: "CHRONOS", msg: "ERROR: NEURAL LINK SEVERED." }]); }
+    };
+
+    // --- TRADING-VIEW ASSET RENDERER (ADAPTS TO SINGLE OR MULTI ASSET JSON) ---
+    const renderAssetCards = () => {
+        if (!prediction) return null;
+        
+        let assetsToRender = [];
+        // Detect if JSON is single asset (from Colab) or multi-asset (from GitHub Actions)
+        if (prediction.asset && typeof prediction.asset === 'string') {
+            assetsToRender.push({ sector: "PRIMARY TARGET", data: prediction });
+        } else {
+            Object.keys(prediction).forEach(key => {
+                if (!prediction[key].error) assetsToRender.push({ sector: key, data: prediction[key] });
+            });
+        }
+
+        return assetsToRender.map((item, idx) => {
+            const isBull = item.data.chronos_vector?.includes("BULL");
+            const color = isBull ? '#22c55e' : '#ef4444'; // TradingView Green/Red
+            const conf = parseFloat(item.data.accuracy_confidence || "0");
+
+            return (
+                <div key={idx} style={{ background: '#131722', border: `1px solid #2a2e39`, borderRadius: '8px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+                    {/* Header: Sector & Asset */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #2a2e39', paddingBottom: '10px' }}>
+                        <span style={{ color: '#d1d4dc', fontSize: '0.85rem', fontWeight: 'bold' }}>{item.sector.replace(/_/g, " ")}</span>
+                        <span style={{ color: '#2962ff', fontSize: '0.85rem', fontWeight: 'bold', background: 'rgba(41,98,255,0.1)', padding: '2px 8px', borderRadius: '4px' }}>{item.data.asset}</span>
+                    </div>
+
+                    {/* Main Price Action */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div style={{ color: '#787b86', fontSize: '0.75rem', textTransform: 'uppercase' }}>Current</div>
+                            <div style={{ color: '#d1d4dc', fontSize: '1.4rem', fontWeight: 'bold', fontFamily: 'sans-serif' }}>{item.data.current_price}</div>
+                        </div>
+                        <div style={{ color: '#787b86', fontSize: '1.2rem' }}>➔</div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ color: '#787b86', fontSize: '0.75rem', textTransform: 'uppercase' }}>Target</div>
+                            <div style={{ color: color, fontSize: '1.4rem', fontWeight: 'bold', fontFamily: 'sans-serif' }}>{item.data.projected_target}</div>
+                        </div>
+                    </div>
+
+                    {/* Vector & Sentiment Badges */}
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <div style={{ flex: 1, background: `${color}22`, color: color, padding: '8px', borderRadius: '4px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 'bold', border: `1px solid ${color}44` }}>
+                            {item.data.chronos_vector}
+                        </div>
+                        {item.data.nlp_sentiment && (
+                            <div style={{ flex: 1, background: '#2a2e39', color: '#d1d4dc', padding: '8px', borderRadius: '4px', textAlign: 'center', fontSize: '0.75rem', border: '1px solid #363a45' }}>
+                                NLP: {item.data.nlp_sentiment}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Technicals Data Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#0b0e14', padding: '10px', borderRadius: '4px', border: '1px solid #2a2e39' }}>
+                        <div>
+                            <div style={{ color: '#787b86', fontSize: '0.65rem' }}>EPISTEMIC UNCERTAINTY</div>
+                            <div style={{ color: '#d1d4dc', fontSize: '0.85rem', fontFamily: 'monospace' }}>{item.data.epistemic_uncertainty}</div>
+                        </div>
+                        <div>
+                            <div style={{ color: '#787b86', fontSize: '0.65rem' }}>SPECTRAL RESONANCE</div>
+                            <div style={{ color: '#d1d4dc', fontSize: '0.85rem', fontFamily: 'monospace' }}>{item.data.spectral_resonance}</div>
+                        </div>
+                    </div>
+
+                    {/* Confidence Progress Bar */}
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                            <span style={{ color: '#787b86', fontSize: '0.7rem' }}>CONFIDENCE RATING</span>
+                            <span style={{ color: '#d1d4dc', fontSize: '0.7rem', fontWeight: 'bold' }}>{item.data.accuracy_confidence}</span>
+                        </div>
+                        <div style={{ width: '100%', height: '6px', background: '#2a2e39', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: `${conf}%`, height: '100%', background: conf > 80 ? '#22c55e' : conf > 50 ? '#eab308' : '#ef4444' }}></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        });
     };
 
     if (!isMounted) return null;
 
     if (!hasAgreed) {
         return (
-            <div style={{ width: '100vw', height: '100vh', background: '#050000', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'monospace', padding: '20px', textAlign: 'center' }}>
-                <h1 style={{ fontSize: '3rem', color: '#ff3333', textShadow: '0 0 20px red', marginBottom: '20px' }}>RESTRICTED TESTNET NODE</h1>
-                <div style={{ maxWidth: '600px', background: 'rgba(255,0,0,0.05)', padding: '30px', border: '1px solid #ff3333', textAlign: 'left', lineHeight: '1.8' }}>
-                    <p>1. Mathematical models project probabilities, not certainties.</p>
-                    <p>2. R&D Rulings apply. Not registered with RBI/SEBI.</p>
-                    <p>3. Web3 execution is final. Fiat execution is manual.</p>
+            <div style={{ width: '100vw', height: '100vh', background: '#0b0e14', color: '#d1d4dc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+                <h1 style={{ fontSize: '2.5rem', color: '#ef4444', marginBottom: '20px', letterSpacing: '2px' }}>RESTRICTED TERMINAL</h1>
+                <div style={{ maxWidth: '600px', background: '#131722', padding: '30px', border: '1px solid #2a2e39', borderRadius: '8px', lineHeight: '1.6' }}>
+                    <p style={{borderBottom: '1px solid #2a2e39', paddingBottom: '10px'}}>1. Mathematical models project probabilities, not certainties.</p>
+                    <p style={{borderBottom: '1px solid #2a2e39', padding: '10px 0'}}>2. Not registered with SEC/RBI/SEBI. Academic Use Only.</p>
+                    <p style={{paddingTop: '10px'}}>3. Web3 execution is final. Fiat execution is manual.</p>
                 </div>
-                <button onClick={() => setHasAgreed(true)} style={{ marginTop: '30px', padding: '15px 40px', background: 'black', color: '#ff3333', border: '2px solid #ff3333', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold' }}>I AGREE. ENTER MATRIX.</button>
+                <button onClick={() => setHasAgreed(true)} style={{ marginTop: '30px', padding: '15px 40px', background: '#2962ff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#1e4ebd'} onMouseOut={e => e.currentTarget.style.background = '#2962ff'}>I AGREE. LAUNCH TERMINAL.</button>
             </div>
         );
     }
 
     return (
-        <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#000', color: '#fff', fontFamily: 'monospace', overflowY: 'auto', overflowX: 'hidden' }}>
-            <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+        <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#0b0e14', color: '#d1d4dc', fontFamily: 'sans-serif', overflowY: 'auto', overflowX: 'hidden' }}>
+            
+            {/* BACKGROUND CANVAS */}
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, opacity: 0.4 }}>
                 <Canvas camera={{ position: [0, 0, 5] }}>
                     <Suspense fallback={null}>
                         <ambientLight intensity={0.2} />
-                        <pointLight position={[10, 10, 10]} intensity={1.5} color={isCalibrating ? "#ff0000" : "#00ffff"} />
-                        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                        <pointLight position={[10, 10, 10]} intensity={1.5} color={isCalibrating ? "#ef4444" : "#2962ff"} />
+                        <Stars radius={100} depth={50} count={3000} factor={3} saturation={0} fade speed={0.5} />
                         <SingularityCore isCalibrating={isCalibrating} />
-                        <OrbitControls enableZoom={false} autoRotate={true} autoRotateSpeed={0.5} />
+                        <OrbitControls enableZoom={false} autoRotate={true} autoRotateSpeed={0.3} />
                     </Suspense>
                 </Canvas>
             </div>
 
+            {/* UI LAYER */}
             <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 
-                {/* TOP BAR */}
-                <div style={{ padding: '20px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(0,255,255,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-                    <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#00ffff', textShadow: '0 0 10px rgba(0,255,255,0.5)' }}>LONEWOLF // APEX_LEDGER</h1>
+                {/* TRADING-VIEW STYLE HEADER */}
+                <div style={{ padding: '15px 20px', background: '#131722', borderBottom: '1px solid #2a2e39', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                    <h1 style={{ margin: 0, fontSize: '1.2rem', color: '#d1d4dc', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ color: '#2962ff' }}>⬡</span> LONEWOLF TERMINAL
+                    </h1>
+                    
                     {!zkID ? (
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                            <input type="password" placeholder="Secret Passphrase" value={secretPhrase} onChange={(e) => setSecretPhrase(e.target.value)} style={{ background: '#111', color: '#fff', border: '1px solid rgba(0,255,255,0.5)', padding: '8px', outline: 'none' }} />
-                            <button onClick={generateZKProof} style={{ background: 'rgba(0,255,255,0.2)', color: '#00ffff', border: '1px solid #00ffff', padding: '8px 15px', cursor: 'pointer', fontWeight: 'bold' }}>GENERATE ZK-ID</button>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <input type="password" placeholder="Terminal Passphrase" value={secretPhrase} onChange={(e) => setSecretPhrase(e.target.value)} style={{ background: '#0b0e14', color: '#d1d4dc', border: '1px solid #2a2e39', padding: '6px 12px', borderRadius: '4px', outline: 'none', fontSize: '0.85rem' }} />
+                            <button onClick={generateZKProof} style={{ background: '#2a2e39', color: '#d1d4dc', border: 'none', padding: '6px 15px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>CONNECT ZK-ID</button>
                         </div>
                     ) : (
-                        <div style={{ color: '#00ff00', fontWeight: 'bold', fontSize: '0.9rem' }}>ID: {zkID}</div>
+                        <div style={{ background: '#1e222d', padding: '5px 10px', borderRadius: '4px', border: '1px solid #2a2e39', color: '#22c55e', fontSize: '0.8rem', fontFamily: 'monospace' }}>ID: {zkID}</div>
                     )}
                 </div>
 
-                {/* MAIN CONTENT */}
-                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'flex-start', padding: '20px', gap: '20px', marginTop: '10px' }}>
+                {/* MONEYCONTROL STYLE TICKER TAPE */}
+                <div style={{ width: '100%', background: '#0b0e14', borderBottom: '1px solid #2a2e39', padding: '8px 0', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex' }}>
+                    <div style={{ display: 'inline-block', animation: 'marquee 30s linear infinite', color: '#787b86', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                        {liveNews.length > 0 ? liveNews.map((n, i) => (
+                            <span key={i} style={{ margin: '0 30px' }}><span style={{color: '#2962ff'}}>■</span> {n.title}</span>
+                        )) : "ESTABLISHING SATELLITE UPLINK..."}
+                    </div>
+                </div>
+
+                <style>{`@keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }`}</style>
+
+                {/* MAIN CONTENT WORKSPACE */}
+                <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', padding: '20px', gap: '20px' }}>
                     
-                    {/* CHAT AGENT */}
-                    <div style={{ flex: '1 1 350px', maxWidth: '500px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', display: 'flex', flexDirection: 'column', height: '450px' }}>
-                        <div style={{ padding: '15px', borderBottom: '1px solid rgba(0,255,255,0.2)', color: '#00ffff', fontWeight: 'bold' }}>ORACLE COMM-LINK</div>
-                        <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {!zkID ? <p style={{ color: 'orange', textAlign: 'center', fontSize: '0.9rem' }}>GENERATE ZK-ID TO INITIATE COMMS</p> : null}
+                    {/* LEFT PANEL: CHAT AGENT */}
+                    <div style={{ flex: '1 1 300px', maxWidth: '400px', background: '#131722', border: '1px solid #2a2e39', borderRadius: '8px', display: 'flex', flexDirection: 'column', height: '550px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+                        <div style={{ padding: '15px', borderBottom: '1px solid #2a2e39', color: '#d1d4dc', fontWeight: 'bold', fontSize: '0.9rem' }}>QUANTITATIVE AGENT (GEMINI)</div>
+                        
+                        <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            {!zkID ? <p style={{ color: '#eab308', textAlign: 'center', fontSize: '0.85rem' }}>ZK-ID REQUIRED FOR COMMS</p> : null}
                             {chatHistory.map((chat, i) => (
                                 <div key={i} style={{ textAlign: chat.role === "USER" ? "right" : "left" }}>
-                                    <span style={{ background: chat.role === "USER" ? "rgba(255,255,255,0.1)" : "rgba(0,255,255,0.1)", color: chat.role === "USER" ? "white" : "#00ffff", padding: '8px 12px', borderRadius: '5px', display: 'inline-block', maxWidth: '90%', fontSize: '0.9rem', border: chat.role === "CHRONOS" ? '1px solid rgba(0,255,255,0.3)' : 'none' }}>{chat.msg}</span>
+                                    <div style={{ fontSize: '0.65rem', color: '#787b86', marginBottom: '4px' }}>{chat.role}</div>
+                                    <span style={{ background: chat.role === "USER" ? "#2962ff" : "#2a2e39", color: "#d1d4dc", padding: '10px 12px', borderRadius: '6px', display: 'inline-block', maxWidth: '90%', fontSize: '0.85rem', lineHeight: '1.4', fontFamily: chat.role === "USER" ? 'sans-serif' : 'monospace' }}>{chat.msg}</span>
                                 </div>
                             ))}
                             <div ref={chatEndRef} />
                         </div>
-                        <div style={{ padding: '10px', borderTop: '1px solid rgba(0,255,255,0.2)', display: 'flex', gap: '10px' }}>
-                            <input disabled={!zkID} value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMessage()} placeholder="Query Oracle..." style={{ flex: 1, background: '#111', color: '#fff', border: '1px solid #333', padding: '10px', outline: 'none' }} />
-                            <button disabled={!zkID} onClick={sendChatMessage} style={{ background: '#00ffff', color: '#000', border: 'none', padding: '10px 20px', cursor: 'pointer', fontWeight: 'bold' }}>SEND</button>
+                        
+                        <div style={{ padding: '15px', borderTop: '1px solid #2a2e39', display: 'flex', gap: '10px', background: '#0b0e14', borderRadius: '0 0 8px 8px' }}>
+                            <input disabled={!zkID} value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMessage()} placeholder="Query Oracle..." style={{ flex: 1, background: '#131722', color: '#d1d4dc', border: '1px solid #2a2e39', padding: '10px', borderRadius: '4px', outline: 'none', fontSize: '0.85rem' }} />
+                            <button disabled={!zkID} onClick={sendChatMessage} style={{ background: '#2962ff', color: 'white', border: 'none', padding: '0 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>SEND</button>
                         </div>
                     </div>
 
-                    {/* VAULT PANEL OR GLOBAL MATRIX */}
-                    <div style={{ flex: '1 1 350px', maxWidth: prediction ? '100%' : '500px', transition: 'max-width 0.5s', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', border: '1px solid rgba(0,255,255,0.3)', borderRadius: '10px', padding: '30px' }}>
+                    {/* RIGHT PANEL: TERMINAL DATA DISPLAY */}
+                    <div style={{ flex: '1 1 500px', background: '#0b0e14', border: '1px solid #2a2e39', borderRadius: '8px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+                        
+                        {/* HEADER CONTROLS */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #2a2e39' }}>
+                            <h2 style={{ margin: 0, color: '#d1d4dc', fontSize: '1.1rem' }}>ALGORITHMIC PREDICTIONS</h2>
+                            <span onClick={(e) => { e.stopPropagation(); handleFounderOverride(); }} style={{ cursor: 'pointer', color: '#eab308', fontSize: '0.8rem', background: 'rgba(234,179,8,0.1)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(234,179,8,0.3)' }}>DECRYPTION VAULT 🔐</span>
+                        </div>
+
+                        {/* PRE-UNLOCK / CALIBRATION */}
                         {!isReady ? (
-                            <div>
-                                <h3 style={{ color: '#00ffff', letterSpacing: '2px', marginBottom: '20px' }}>SYSTEM CALIBRATION</h3>
-                                <div style={{ width: '100%', height: '4px', background: '#333', marginBottom: '20px' }}><div style={{ width: `${calibrationProgress}%`, height: '100%', background: '#00ffff', transition: 'width 0.2s', boxShadow: '0 0 10px #00ffff' }}></div></div>
-                                <button onClick={runCalibration} disabled={isCalibrating} style={{ width: '100%', padding: '15px', background: isCalibrating ? 'rgba(0,0,0,0.8)' : 'rgba(0,255,255,0.1)', color: '#00ffff', border: '1px solid #00ffff', cursor: 'pointer', fontWeight: 'bold' }}>{isCalibrating ? `SIMULATING (${calibrationProgress}%)...` : "EXECUTE PRE-MARKET TEST"}</button>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '20px' }}>
+                                <div style={{ color: '#787b86' }}>AWAITING INITIALIZATION</div>
+                                <div style={{ width: '80%', maxWidth: '400px', height: '6px', background: '#131722', borderRadius: '3px', overflow: 'hidden' }}><div style={{ width: `${calibrationProgress}%`, height: '100%', background: '#2962ff', transition: 'width 0.2s' }}></div></div>
+                                <button onClick={runCalibration} disabled={isCalibrating} style={{ padding: '12px 30px', background: '#2a2e39', color: '#d1d4dc', border: '1px solid #363a45', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>{isCalibrating ? `SIMULATING (${calibrationProgress}%)...` : "RUN PRE-MARKET ANALYSIS"}</button>
                             </div>
                         ) : !prediction ? (
-                            <div>
-                                <h3 onClick={(e) => { e.stopPropagation(); handleFounderOverride(); }} style={{ cursor: 'pointer', color: 'gold', marginBottom: '15px', letterSpacing: '1px', display: 'inline-block', position: 'relative', zIndex: 9999, borderBottom: '1px dashed gold' }}>DECRYPTION VAULT 🔐</h3>
-                                <p style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '20px' }}>Instant unlock via Web3. Manual unlock via Web2 Fiat.</p>
-                                
-                                <button onClick={payWithEVM} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: 'linear-gradient(45deg, #f6851b, #e2761b)', color: 'black', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginBottom: '15px', borderRadius: '5px', boxShadow: '0 0 15px rgba(246,133,27,0.3)' }}>{isUnlocking ? "AWAITING SIGNATURE..." : "🦊 WEB3 UNLOCK (0.005 ETH)"}</button>
-                                <button onClick={payWithFiat} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: '#00457C', color: 'white', border: '1px solid #0079C1', cursor: 'pointer', fontWeight: 'bold', borderRadius: '5px' }}>💳 FIAT UNLOCK (PAYPAL)</button>
-                                <p style={{ color: '#888', fontSize: '0.75rem', marginTop: '15px', textAlign: 'center' }}>{systemStatus}</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '15px', maxWidth: '400px', margin: '0 auto' }}>
+                                <p style={{ color: '#787b86', fontSize: '0.9rem', textAlign: 'center', marginBottom: '10px' }}>Terminal locked. Connect Web3 wallet or utilize Fiat gateway to decrypt algorithmic outputs.</p>
+                                <button onClick={() => {}} style={{ width: '100%', padding: '15px', background: '#f6851b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>🦊 UNLOCK VIA METAMASK (0.005 ETH)</button>
+                                <button onClick={() => {}} style={{ width: '100%', padding: '15px', background: '#00457C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>💳 UNLOCK VIA PAYPAL ($15.00)</button>
                             </div>
-                        ) : prediction.error || Object.keys(prediction).length === 0 ? (
-                            <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>
-                                <h3>MATRIX COMPILING</h3>
-                                <p style={{ fontSize: '0.9rem', color: '#aaa' }}>The Oracle memory file is empty or missing from the Render server. Ensure GitHub Actions has completed its run, then clear Render cache.</p>
+                        ) : prediction.error ? (
+                            <div style={{ color: '#ef4444', textAlign: 'center', padding: '40px' }}>
+                                <h3>DATA STREAM ERROR</h3>
+                                <p style={{ fontSize: '0.85rem', color: '#787b86', marginTop: '10px' }}>{prediction.error}</p>
                             </div>
                         ) : (
-                            <div style={{ padding: '10px', height: '500px', overflowY: 'auto' }}>
-                                <h2 style={{ color: '#00ff00', marginBottom: '15px', borderBottom: '1px solid #00ff00', paddingBottom: '10px', fontSize: '1.2rem', letterSpacing: '2px' }}>GLOBAL OMNISCIENCE MATRIX</h2>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                                    {Object.keys(prediction).map((sector) => {
-                                        const data = prediction[sector];
-                                        if (!data || data.error) return null; 
-                                        const isBull = data.chronos_vector?.includes("BULL");
-                                        const color = isBull ? '#00ff00' : '#ff3333';
-                                        return (
-                                            <div key={sector} style={{ border: `1px solid ${color}44`, padding: '15px', background: `linear-gradient(180deg, rgba(0,0,0,0.8) 0%, ${color}11 100%)`, borderRadius: '5px', boxShadow: `0 0 15px ${color}22` }}>
-                                                <p style={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', margin: '0 0 10px 0', borderBottom: '1px solid #333', paddingBottom: '5px' }}>{sector.replace(/_/g, " ")} <span style={{ color: '#00ffff', fontSize: '0.8rem' }}>({data.asset})</span></p>
-                                                <p style={{ color: color, fontSize: '1.1rem', fontWeight: 'bold', margin: '5px 0' }}>{data.chronos_vector}</p>
-                                                <div style={{ margin: '10px 0', padding: '5px', background: 'rgba(255,255,255,0.05)', borderLeft: `3px solid ${data.nlp_sentiment?.includes("BULL") ? '#00ff00' : '#ff3333'}` }}>
-                                                    <span style={{ fontSize: '0.75rem', color: '#888' }}>NEWS SENTIMENT:</span><br/>
-                                                    <span style={{ fontSize: '0.85rem', color: 'white' }}>{data.nlp_sentiment || "NEUTRAL"}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#aaa', marginTop: '10px' }}>
-                                                    <span>TARGET: <strong style={{color:'white'}}>{data.projected_target}</strong></span>
-                                                    <span>CONF: <strong style={{color:'white'}}>{data.accuracy_confidence}</strong></span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                            /* THE NEW TRADING VIEW GRID RENDERER */
+                            <div style={{ height: '450px', overflowY: 'auto', paddingRight: '10px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                                    {renderAssetCards()}
                                 </div>
                             </div>
                         )}
                     </div>
                 </div>
-
-                {/* --- LIVE FINANCIAL NEWS MARQUEE (SHOWS BEFORE UNLOCK) --- */}
-                {!prediction && (
-                    <div style={{ width: '100%', background: 'rgba(0,0,0,0.8)', borderTop: '1px solid #333', padding: '15px 20px', marginTop: 'auto', position: 'relative', zIndex: 10 }}>
-                        <h4 style={{ color: '#00ffff', margin: '0 0 10px 0', fontSize: '0.9rem', letterSpacing: '1px' }}>📡 GLOBAL SATELLITE FEED (YAHOO FINANCE)</h4>
-                        <div style={{ display: 'flex', overflowX: 'auto', gap: '20px', paddingBottom: '10px', scrollbarWidth: 'thin' }}>
-                            {liveNews.length > 0 ? liveNews.map((news, i) => (
-                                <div key={i} style={{ minWidth: '300px', background: '#111', padding: '10px', borderLeft: '2px solid #00ffff', fontSize: '0.85rem' }}>
-                                    <p style={{ color: 'white', margin: '0 0 8px 0', lineHeight: '1.4' }}>{news.title}</p>
-                                    <a href={news.link} target="_blank" rel="noreferrer" style={{ color: '#00ffff', textDecoration: 'none', fontWeight: 'bold' }}>[READ TRANSMISSION]</a>
-                                </div>
-                            )) : (
-                                <span style={{ color: '#888', fontStyle: 'italic' }}>Intercepting satellite data streams...</span>
-                            )}
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
