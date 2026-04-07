@@ -2,6 +2,37 @@
 import React, { useState } from 'react';
 import Web3Paywall from './components/Web3Paywall';
 import AlphaMatrix from './components/AlphaMatrix';
+import Link from 'next/link'; // Make sure this is at the top of page.tsx!
+
+// ... inside your main component ...
+
+<header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-[#2b3139] pb-4 gap-4">
+  <h1 className="text-2xl font-bold flex items-center gap-2">
+    <span className="text-yellow-500">LONEWOLF</span> MATRIX
+  </h1>
+  
+  <div className="flex flex-wrap items-center gap-3">
+    {/* GENESIS PAPER */}
+    <div className="flex items-center">
+      <a href="/genesis.pdf" target="_blank" className="text-sm text-gray-400 hover:text-white border border-[#2b3139] border-r-0 rounded-l px-3 py-1">
+        📄 Genesis Paper
+      </a>
+      <a href="/genesis.pdf.ots" download className="text-xs text-blue-400 hover:text-blue-300 border border-[#2b3139] bg-[#1a202c] rounded-r px-2 py-1.5">
+        ⛓️ Verify IP (.ots)
+      </a>
+    </div>
+
+    {/* LINK TO THE NEW INVESTOR PORTAL */}
+    <Link href="/investor" className="text-sm text-yellow-500 hover:text-yellow-400 border border-yellow-900 bg-yellow-900/20 px-4 py-1.5 rounded font-bold flex items-center gap-2 transition-colors">
+      🏦 Institutional Syndicate Portal
+    </Link>
+    
+    <div className="bg-[#181a20] border border-green-900 text-green-500 px-3 py-1.5 rounded font-mono text-xs flex items-center gap-2 hidden sm:flex">
+      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+      VIP VERIFIED
+    </div>
+  </div>
+</header>
 
 export default function App() {
   // This state controls the Web3 Paywall. False = Locked. True = Unlocked.
