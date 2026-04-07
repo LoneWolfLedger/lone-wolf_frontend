@@ -2,66 +2,31 @@
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { ethers } from 'ethers';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, MeshDistortMaterial, Stars, Torus } from '@react-three/drei';
+import { OrbitControls, Sphere, MeshDistortMaterial, Float } from '@react-three/drei';
 
-// --- 1. 3D HOLOGRAPHIC GLOBE (Palantir Style) ---
-const GlobalHologram = ({ isCalibrating }: { isCalibrating: boolean }) => {
-    const globeRef = useRef<any>(null);
-    const ringRef1 = useRef<any>(null);
-    const ringRef2 = useRef<any>(null);
+// --- 3D GLOBE ---
+const GlobalHologram = ({ isCalibrating }: { isCalibrating: boolean }) => (
+    <Float speed={isCalibrating ? 5 : 1} rotationIntensity={isCalibrating ? 2 : 0.5} floatIntensity={1}>
+        <Sphere args={[1.8, 64, 64]}>
+            <MeshDistortMaterial color={isCalibrating ? "#ef4444" : "#000000"} attach="material" distort={isCalibrating ? 0.6 : 0.25} speed={isCalibrating ? 4 : 1.5} wireframe={true} transparent={true} opacity={0.15} />
+        </Sphere>
+    </Float>
+);
 
-    useFrame(({ clock }) => {
-        if (globeRef.current) globeRef.current.rotation.y = clock.getElapsedTime() * 0.2;
-        if (ringRef1.current) {
-            ringRef1.current.rotation.x = clock.getElapsedTime() * 0.3;
-            ringRef1.current.rotation.y = clock.getElapsedTime() * 0.1;
-        }
-        if (ringRef2.current) {
-            ringRef2.current.rotation.x = clock.getElapsedTime() * -0.2;
-            ringRef2.current.rotation.y = clock.getElapsedTime() * -0.4;
-        }
-    });
-
-    const color = isCalibrating ? "#ef4444" : "#0ea5e9"; // Red to Sci-Fi Blue
-
-    return (
-        <group>
-            {/* The Earth Wireframe */}
-            <Sphere ref={globeRef} args={[1.8, 32, 32]}>
-                <meshBasicMaterial color={color} wireframe={true} transparent={true} opacity={0.15} />
-            </Sphere>
-            {/* Orbital Satellites / Data Rings */}
-            <Torus ref={ringRef1} args={[2.2, 0.01, 16, 100]} rotation={[Math.PI / 2, 0, 0]}>
-                <meshBasicMaterial color={color} transparent={true} opacity={0.3} />
-            </Torus>
-            <Torus ref={ringRef2} args={[2.6, 0.01, 16, 100]} rotation={[0, Math.PI / 4, 0]}>
-                <meshBasicMaterial color={color} transparent={true} opacity={0.1} />
-            </Torus>
-        </group>
-    );
-};
-
-// --- 2. TRADINGVIEW INTERACTIVE ENGINE ---
+// --- TRADINGVIEW WIDGET ---
 const TradingViewWidget = ({ symbol }: { symbol: string }) => {
-    // Map Yahoo tickers to TradingView tickers
-    const tvSymbol = symbol.replace("^GSPC", "SPX").replace("^IXIC", "IXIC").replace("^NSEI", "NIFTY").replace("BTC-USD", "BINANCE:BTCUSDT").replace("ETH-USD", "BINANCE:ETHUSDT").replace("GC=F", "GC1!").replace("CL=F", "CL1!");
-    
+    const tvSymbol = symbol.replace("^GSPC", "SPX").replace("^IXIC", "IXIC").replace("^NSEI", "NIFTY").replace("BTC-USD", "BINANCE:BTCUSDT").replace("ETH-USD", "BINANCE:ETHUSDT").replace("GC=F", "GC1!");
     return (
         <div style={{ height: '400px', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-            <iframe 
-                src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_1&symbol=${tvSymbol}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=MACD%40tv-basicstudies%1FRSI%40tv-basicstudies&theme=light&style=1&timezone=Etc%2FUTC`}
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                allowFullScreen
-            />
+            <iframe src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_1&symbol=${tvSymbol}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=MACD%40tv-basicstudies%1FRSI%40tv-basicstudies&theme=light&style=1`} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
         </div>
     );
 };
 
-// --- 3. MAIN TERMINAL OS ---
 export default function AthenaPremiumUI() {
     const RENDER_API_URL = process.env.NEXT_PUBLIC_RENDER_API_URL || ""; 
     const EVM_WALLET = process.env.NEXT_PUBLIC_EVM_WALLET || "";
-    const PAYPAL_LINK = process.env.NEXT_PUBLIC_PAYPAL_LINK || "https://paypal.me/"; 
+    const PAYPAL_LINK = process.env.NEXT_PUBLIC_PAYPAL_LINK || ""; 
     const FOUNDER_PRIVATE_KEY = process.env.NEXT_PUBLIC_FOUNDER_KEY || ""; 
 
     const [hasAgreed, setHasAgreed] = useState(false);
@@ -75,8 +40,6 @@ export default function AthenaPremiumUI() {
     const [isReady, setIsReady] = useState(false);
     const [isUnlocking, setIsUnlocking] = useState(false);
     const [prediction, setPrediction] = useState<any>(null);
-    
-    // Interactive Chart State
     const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
     const [chatInput, setChatInput] = useState("");
@@ -115,7 +78,7 @@ export default function AthenaPremiumUI() {
         setIsCalibrating(true);
         let progress = 0;
         const interval = setInterval(() => {
-            progress += 5;
+            progress += 10;
             if (progress >= 100) {
                 clearInterval(interval);
                 setIsCalibrating(false);
@@ -140,6 +103,23 @@ export default function AthenaPremiumUI() {
     const handleFounderOverride = () => {
         const attempt = prompt("SYSTEM OVERRIDE CODE:");
         if (attempt === FOUNDER_PRIVATE_KEY) unlockAI();
+        else if (attempt !== null) alert("ACCESS DENIED.");
+    };
+
+    const payWithEVM = async () => {
+        const win = window as any; 
+        if (!win.ethereum) return alert("MetaMask required.");
+        try {
+            setIsUnlocking(true);
+            const provider = new ethers.providers.Web3Provider(win.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            setSystemStatus("AWAITING SIGNATURE...");
+            const tx = await signer.sendTransaction({ to: EVM_WALLET, value: ethers.utils.parseEther("0.005") });
+            setSystemStatus("VERIFYING BLOCKCHAIN...");
+            await tx.wait();
+            await unlockAI();
+        } catch (error: any) { setIsUnlocking(false); setSystemStatus("TRANSACTION ABORTED."); }
     };
 
     const sendChatMessage = async () => {
@@ -157,13 +137,12 @@ export default function AthenaPremiumUI() {
         } catch (e) { setChatHistory([...newHistory, { role: "CHRONOS", msg: "NETWORK ERROR." }]); }
     };
 
-    // --- RENDER GRID OR DETAILED CHART ---
     const renderWorkspace = () => {
         if (!isReady) {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '20px' }}>
                     <div style={{ width: '300px', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}><div style={{ width: `${calibrationProgress}%`, height: '100%', background: '#000000', transition: 'width 0.2s' }}></div></div>
-                    <button onClick={runCalibration} disabled={isCalibrating} style={{ padding: '15px 30px', background: '#000000', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', fontSize: '0.9rem' }}>{isCalibrating ? `MAPPING GLOBE (${calibrationProgress}%)...` : "RUN GLOBAL SCAN"}</button>
+                    <button onClick={runCalibration} disabled={isCalibrating} style={{ padding: '15px 30px', background: '#000000', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800' }}>{isCalibrating ? `MAPPING GLOBE (${calibrationProgress}%)...` : "RUN GLOBAL SCAN"}</button>
                 </div>
             );
         }
@@ -172,13 +151,21 @@ export default function AthenaPremiumUI() {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '15px', maxWidth: '350px', margin: '0 auto' }}>
                     <p style={{ color: '#64748b', fontSize: '0.85rem', textAlign: 'center', fontWeight: 'bold' }}>Connect Web3 wallet to decrypt global datasets.</p>
-                    <button onClick={() => {}} style={{ width: '100%', padding: '15px', background: '#f97316', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '800', fontSize: '0.9rem' }}>🦊 METAMASK (0.005 ETH)</button>
-                    <button onClick={() => window.open(PAYPAL_LINK, "_blank")} style={{ width: '100%', padding: '15px', background: '#0284c7', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '800', fontSize: '0.9rem' }}>💳 PAYPAL ($15.00)</button>
+                    <button onClick={payWithEVM} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: '#f97316', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '800' }}>🦊 METAMASK (0.005 ETH)</button>
+                    <button onClick={() => window.open(PAYPAL_LINK, "_blank")} style={{ width: '100%', padding: '15px', background: '#0284c7', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '800' }}>💳 PAYPAL ($15.00)</button>
                 </div>
             );
         }
 
-        // DETAILED CHART VIEW (When an asset is clicked)
+        if (prediction.error) {
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
+                    <h2 style={{ color: '#ef4444', fontWeight: '900' }}>ORACLE VAULT COMPILING</h2>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>{prediction.error}</p>
+                </div>
+            );
+        }
+
         if (selectedAsset) {
             const isBull = selectedAsset.data.chronos_vector?.includes("BULL");
             const color = isBull ? '#16a34a' : '#dc2626';
@@ -189,59 +176,26 @@ export default function AthenaPremiumUI() {
                         <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#0f172a', fontWeight: '900' }}>{selectedAsset.sector.replace(/_/g, " ")}</h2>
                         <button onClick={() => setSelectedAsset(null)} style={{ background: '#f1f5f9', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', color: '#64748b' }}>← BACK TO GRID</button>
                     </div>
-
                     <TradingViewWidget symbol={selectedAsset.data.asset} />
-
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                             <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '10px' }}>AI QUANTITATIVE VECTOR</div>
                             <div style={{ color: color, fontSize: '1.4rem', fontWeight: '900' }}>{selectedAsset.data.chronos_vector}</div>
-                            <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#334155', lineHeight: '1.5' }}>
-                                <strong>Suggestion:</strong> {isBull ? "Algorithm indicates high-probability upward momentum. Consider establishing long positions near current support levels." : "Algorithm detects structural breakdown. Consider hedging exposure or exiting long positions."}
-                            </div>
                         </div>
-
-                        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                            <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '10px' }}>PRICE ACTION METRICS</div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                <span style={{ color: '#64748b', fontWeight: 'bold' }}>Current:</span>
-                                <span style={{ color: '#0f172a', fontWeight: '900' }}>{selectedAsset.data.current_price}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                <span style={{ color: '#64748b', fontWeight: 'bold' }}>Projected Target:</span>
-                                <span style={{ color: color, fontWeight: '900' }}>{selectedAsset.data.projected_target}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: '#64748b', fontWeight: 'bold' }}>Epistemic Risk:</span>
-                                <span style={{ color: '#0f172a', fontWeight: '900' }}>{selectedAsset.data.epistemic_uncertainty}</span>
-                            </div>
-                        </div>
-
-                        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                            <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '10px' }}>DEEP TECHNICALS</div>
-                            <div style={{ fontSize: '0.85rem', color: '#334155', lineHeight: '1.8' }}>
-                                <div><strong>NLP Sentiment:</strong> <span style={{color: selectedAsset.data.nlp_sentiment?.includes("BULL") ? '#16a34a' : '#dc2626'}}>{selectedAsset.data.nlp_sentiment}</span></div>
-                                <div><strong>Resonance:</strong> {selectedAsset.data.spectral_resonance}</div>
-                                <div><strong>Confidence:</strong> {selectedAsset.data.accuracy_confidence}</div>
-                            </div>
-                            <div style={{ marginTop: '15px', width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
-                                <div style={{ width: `${parseFloat(selectedAsset.data.accuracy_confidence)}%`, height: '100%', background: color }}></div>
-                            </div>
+                        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '10px' }}>PRICE METRICS</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><span style={{ color: '#64748b', fontWeight: 'bold' }}>Current:</span><span style={{ color: '#0f172a', fontWeight: '900' }}>{selectedAsset.data.current_price}</span></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#64748b', fontWeight: 'bold' }}>Target:</span><span style={{ color: color, fontWeight: '900' }}>{selectedAsset.data.projected_target}</span></div>
                         </div>
                     </div>
                 </div>
             );
         }
 
-        // DEFAULT GRID VIEW
         let assetsToRender = [];
-        if (prediction.asset && typeof prediction.asset === 'string') {
-            assetsToRender.push({ sector: "PRIMARY TARGET", data: prediction });
-        } else {
-            Object.keys(prediction).forEach(key => {
-                if (!prediction[key].error) assetsToRender.push({ sector: key, data: prediction[key] });
-            });
-        }
+        Object.keys(prediction).forEach(key => {
+            if (key !== "oracle_key" && !prediction[key].error) assetsToRender.push({ sector: key, data: prediction[key] });
+        });
 
         return (
             <div style={{ height: '100%', overflowY: 'auto', paddingRight: '10px' }}>
@@ -251,7 +205,7 @@ export default function AthenaPremiumUI() {
                         const tvColor = isBull ? '#16a34a' : '#dc2626';
 
                         return (
-                            <div key={idx} onClick={() => setSelectedAsset(item)} style={{ background: '#ffffff', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.04)', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.08)'; }} onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.04)'; }}>
+                            <div key={idx} onClick={() => setSelectedAsset(item)} style={{ background: '#ffffff', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.04)', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ color: '#0f172a', fontSize: '0.9rem', fontWeight: '900' }}>{item.sector.replace(/_/g, " ")}</span>
                                     <div style={{ background: `${tvColor}15`, color: tvColor, padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', fontWeight: '900' }}>{isBull ? 'BUY' : 'SELL'}</div>
@@ -261,7 +215,6 @@ export default function AthenaPremiumUI() {
                                     <div style={{ color: '#cbd5e1', fontSize: '1.2rem', paddingBottom: '4px' }}>→</div>
                                     <div style={{ textAlign: 'right' }}><div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 'bold' }}>TARGET</div><div style={{ color: tvColor, fontSize: '1.2rem', fontWeight: '900' }}>{item.data.projected_target}</div></div>
                                 </div>
-                                <div style={{ color: '#64748b', fontSize: '0.7rem', textAlign: 'center', fontWeight: 'bold' }}>CLICK TO OPEN TERMINAL & CHARTS</div>
                             </div>
                         );
                     })}
@@ -274,7 +227,7 @@ export default function AthenaPremiumUI() {
 
     if (!hasAgreed) {
         return (
-            <div style={{ width: '100vw', height: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+            <div style={{ width: '100vw', height: '100vh', background: '#f4f5f7', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
                 <div style={{ background: '#ffffff', padding: '50px', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.08)', maxWidth: '600px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.02)' }}>
                     <h1 style={{ fontSize: '2.5rem', color: '#0f172a', marginBottom: '10px', fontWeight: '900' }}>LONEWOLF OS</h1>
                     <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '30px', fontWeight: 'bold' }}>GLOBAL INTELLIGENCE NODE</p>
@@ -286,31 +239,16 @@ export default function AthenaPremiumUI() {
 
     return (
         <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#f8fafc', color: '#0f172a', fontFamily: 'sans-serif', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            
-            {/* 3D HOLOGRAPHIC GLOBE BACKGROUND */}
             <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-                <Canvas camera={{ position: [0, 0, 6] }}>
-                    <ambientLight intensity={0.8} />
-                    <SingularityCore isCalibrating={isCalibrating} />
-                </Canvas>
+                <Canvas camera={{ position: [0, 0, 6] }}><ambientLight intensity={0.8} /><GlobalHologram isCalibrating={isCalibrating} /></Canvas>
             </div>
-
             <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                
-                {/* TICKER TAPE */}
                 <div style={{ width: '100%', background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '8px 0', display: 'flex', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                    <div style={{ display: 'inline-block', animation: 'marquee 40s linear infinite', color: '#334155', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                        {liveNews.length > 0 ? liveNews.map((n, i) => (<span key={i} style={{ margin: '0 40px' }}><span style={{color: '#000000'}}>■</span> {n.title}</span>)) : "ESTABLISHING SATELLITE UPLINK..."}
-                    </div>
+                    <div style={{ display: 'inline-block', animation: 'marquee 40s linear infinite', color: '#334155', fontSize: '0.75rem', fontWeight: 'bold' }}>{liveNews.length > 0 ? liveNews.map((n, i) => (<span key={i} style={{ margin: '0 40px' }}><span style={{color: '#000000'}}>■</span> {n.title}</span>)) : "ESTABLISHING SATELLITE UPLINK..."}</div>
                     <style>{`@keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }`}</style>
                 </div>
-
-                {/* HEADER */}
                 <div style={{ padding: '15px 20px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <h1 style={{ margin: 0, fontSize: '1.4rem', color: '#000000', fontWeight: '900' }}>LONEWOLF OS</h1>
-                        <span style={{ fontSize: '0.7rem', color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>{systemStatus}</span>
-                    </div>
+                    <h1 style={{ margin: 0, fontSize: '1.4rem', color: '#000000', fontWeight: '900' }}>LONEWOLF OS</h1>
                     {!zkID ? (
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <input type="password" placeholder="Passphrase" value={secretPhrase} onChange={(e) => setSecretPhrase(e.target.value)} style={{ background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '8px', outline: 'none', fontSize: '0.8rem' }} />
@@ -318,53 +256,32 @@ export default function AthenaPremiumUI() {
                         </div>
                     ) : (<div style={{ background: '#f0fdf4', padding: '6px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', color: '#16a34a', fontSize: '0.75rem', fontWeight: 'bold' }}>ID: {zkID}</div>)}
                 </div>
-
-                {/* 3-COLUMN WORKSPACE */}
                 <div style={{ flex: 1, display: 'flex', padding: '20px', gap: '20px', overflow: 'hidden' }}>
-                    
-                    {/* LEFT: NEWS */}
-                    <div style={{ width: '300px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.04)' }}>
-                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: '900', fontSize: '0.85rem', color: '#0f172a', background: '#f8fafc' }}>GLOBAL NEWS TERMINAL</div>
+                    <div style={{ width: '300px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.04)' }}>
+                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: '900', fontSize: '0.85rem' }}>GLOBAL NEWS</div>
                         <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
-                            {liveNews.length > 0 ? liveNews.map((news, i) => (
-                                <div key={i} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #f1f5f9' }}>
-                                    <a href={news.link} target="_blank" rel="noreferrer" style={{ color: '#334155', textDecoration: 'none', fontSize: '0.85rem', lineHeight: '1.5', display: 'block', fontWeight: '700' }}>{news.title}</a>
-                                    <div style={{ color: '#94a3b8', fontSize: '0.65rem', marginTop: '6px', fontWeight: 'bold' }}>{new Date(news.pubDate).toLocaleString()}</div>
-                                </div>
-                            )) : <div style={{ color: '#94a3b8', fontSize: '0.8rem', textAlign: 'center', padding: '20px', fontWeight: 'bold' }}>Loading Feed...</div>}
+                            {liveNews.length > 0 ? liveNews.map((news, i) => (<div key={i} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #f1f5f9' }}><a href={news.link} target="_blank" rel="noreferrer" style={{ color: '#334155', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '700' }}>{news.title}</a></div>)) : "Loading..."}
                         </div>
                     </div>
-
-                    {/* CENTER: ALADDIN WORKSPACE (GRID OR CHART) */}
-                    <div style={{ flex: 1, background: 'rgba(248,250,252,0.85)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.04)' }}>
-                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff' }}>
-                            <span style={{ fontWeight: '900', fontSize: '0.85rem', color: '#0f172a' }}>{selectedAsset ? "ASSET DEEP DIVE" : "ALGORITHMIC INDICATORS"}</span>
-                            <span onClick={(e) => { e.stopPropagation(); handleFounderOverride(); }} style={{ cursor: 'pointer', fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'bold', background: '#f1f5f9', padding: '4px 8px', borderRadius: '12px' }}>DECRYPTION VAULT 🔐</span>
+                    <div style={{ flex: 1, background: 'rgba(248,250,252,0.85)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.04)' }}>
+                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: '900', fontSize: '0.85rem' }}>{selectedAsset ? "ASSET DEEP DIVE" : "ALGORITHMIC INDICATORS"}</span>
+                            <span onClick={(e) => { e.stopPropagation(); handleFounderOverride(); }} style={{ cursor: 'pointer', fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'bold' }}>DECRYPTION VAULT 🔐</span>
                         </div>
-                        <div style={{ flex: 1, padding: '20px', overflow: 'hidden' }}>
-                            {renderWorkspace()}
-                        </div>
+                        <div style={{ flex: 1, padding: '20px', overflow: 'hidden' }}>{renderWorkspace()}</div>
                     </div>
-
-                    {/* RIGHT: CHATBOT */}
-                    <div style={{ width: '320px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.04)' }}>
-                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: '900', fontSize: '0.85rem', color: '#0f172a', background: '#f8fafc' }}>QUANT AGENT (GEMINI)</div>
+                    <div style={{ width: '320px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.04)' }}>
+                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: '900', fontSize: '0.85rem' }}>QUANT AGENT</div>
                         <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                             {!zkID ? <p style={{ color: '#eab308', textAlign: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>ZK-ID REQUIRED</p> : null}
-                            {chatHistory.map((chat, i) => (
-                                <div key={i} style={{ textAlign: chat.role === "USER" ? "right" : "left" }}>
-                                    <div style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>{chat.role}</div>
-                                    <span style={{ background: chat.role === "USER" ? "#000000" : "#f1f5f9", color: chat.role === "USER" ? "#ffffff" : "#0f172a", border: chat.role === "USER" ? "none" : "1px solid #e2e8f0", padding: '10px 14px', borderRadius: '12px', display: 'inline-block', maxWidth: '95%', fontSize: '0.85rem', lineHeight: '1.5' }}>{chat.msg}</span>
-                                </div>
-                            ))}
+                            {chatHistory.map((chat, i) => (<div key={i} style={{ textAlign: chat.role === "USER" ? "right" : "left" }}><div style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>{chat.role}</div><span style={{ background: chat.role === "USER" ? "#000000" : "#f1f5f9", color: chat.role === "USER" ? "#ffffff" : "#0f172a", border: chat.role === "USER" ? "none" : "1px solid #e2e8f0", padding: '10px 14px', borderRadius: '12px', display: 'inline-block', maxWidth: '95%', fontSize: '0.85rem' }}>{chat.msg}</span></div>))}
                             <div ref={chatEndRef} />
                         </div>
-                        <div style={{ padding: '15px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '10px', background: '#f8fafc' }}>
-                            <input disabled={!zkID} value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMessage()} placeholder="Query..." style={{ flex: 1, background: '#ffffff', color: '#0f172a', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '0.85rem' }} />
-                            <button disabled={!zkID} onClick={sendChatMessage} style={{ background: '#000000', color: 'white', border: 'none', padding: '0 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '900' }}>SEND</button>
+                        <div style={{ padding: '15px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '10px' }}>
+                            <input disabled={!zkID} value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMessage()} placeholder="Query..." style={{ flex: 1, background: '#ffffff', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '0.85rem' }} />
+                            <button disabled={!zkID} onClick={sendChatMessage} style={{ background: '#000000', color: 'white', border: 'none', padding: '0 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '900' }}>SEND</button>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
