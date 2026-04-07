@@ -11,6 +11,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body style={{ margin: 0, padding: 0, fontFamily: 'system-ui, -apple-system, sans-serif', background: '#181a20', color: '#EAECEF', overflow: 'hidden' }}>
         
+        {/* PURE CSS HOVER EFFECTS (Bypasses React Server Component Error) */}
+        <style>{`
+          .nav-link { color: #848E9C; text-decoration: none; font-size: 0.95rem; font-weight: 600; padding: 12px 15px; border-radius: 8px; transition: 0.2s; }
+          .nav-link:hover { color: #EAECEF; background: #2B3139; }
+          .nav-link.active { color: #EAECEF; background: #2B3139; }
+          .support-btn { display: block; background: transparent; color: #848E9C; text-decoration: none; font-size: 0.85rem; font-weight: 600; text-align: center; padding: 12px; border-radius: 8px; border: 1px solid #2B3139; transition: 0.2s; }
+          .support-btn:hover { color: #FCD535; border-color: #FCD535; }
+        `}</style>
+        
         <div style={{ display: 'flex', height: '100vh', position: 'relative', zIndex: 10 }}>
           {/* SOLID INSTITUTIONAL SIDEBAR */}
           <div style={{ width: '260px', background: '#1e2329', borderRight: '1px solid #2B3139', display: 'flex', flexDirection: 'column', padding: '30px 20px' }}>
@@ -23,17 +32,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
               <div style={{ fontSize: '0.75rem', color: '#848E9C', fontWeight: '600', marginBottom: '10px', marginTop: '10px' }}>PLATFORM</div>
-              <Link href="/" style={{ color: '#EAECEF', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600', padding: '12px 15px', borderRadius: '8px', transition: '0.2s', background: '#2B3139' }}>
+              <Link href="/" className="nav-link active">
                 📊 Markets Matrix
               </Link>
-              <Link href="/investors" style={{ color: '#848E9C', textDecoration: 'none', fontSize: '0.95rem', fontWeight: '600', padding: '12px 15px', borderRadius: '8px', transition: '0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#EAECEF'} onMouseOut={e => e.currentTarget.style.color = '#848E9C'}>
+              <Link href="/investors" className="nav-link">
                 🏛️ Investor Relations
               </Link>
             </nav>
             
             {/* SUPPORT */}
             <div style={{ borderTop: '1px solid #2B3139', paddingTop: '20px' }}>
-              <a href="mailto:founder@lonewolf.com?subject=Support" style={{ display: 'block', background: 'transparent', color: '#848E9C', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600', textAlign: 'center', padding: '12px', borderRadius: '8px', border: '1px solid #2B3139', cursor: 'pointer', transition: '0.2s' }} onMouseOver={e => {e.currentTarget.style.color = '#FCD535'; e.currentTarget.style.borderColor = '#FCD535'}} onMouseOut={e => {e.currentTarget.style.color = '#848E9C'; e.currentTarget.style.borderColor = '#2B3139'}}>
+              <a href="mailto:founder@lonewolf.com?subject=Support" className="support-btn">
                 🎧 Contact Support
               </a>
             </div>
