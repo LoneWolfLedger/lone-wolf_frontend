@@ -2,22 +2,30 @@
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { ethers } from 'ethers';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Sphere, MeshDistortMaterial, Stars, Float } from '@react-three/drei';
+import { OrbitControls, Sphere, MeshDistortMaterial, Float } from '@react-three/drei';
 
-// --- 3D SINGULARITY CORE (Background) ---
+// --- 3D SINGULARITY CORE (Dark Wireframe on White Background) ---
 const SingularityCore = ({ isCalibrating }: { isCalibrating: boolean }) => (
     <Float speed={isCalibrating ? 5 : 1} rotationIntensity={isCalibrating ? 2 : 0.5} floatIntensity={1}>
-        <Sphere args={[1.5, 64, 64]}>
-            <MeshDistortMaterial color={isCalibrating ? "#ef4444" : "#2962ff"} attach="material" distort={isCalibrating ? 0.6 : 0.2} speed={isCalibrating ? 4 : 1} wireframe={true} opacity={0.15} transparent={true} />
+        <Sphere args={[1.8, 64, 64]}>
+            <MeshDistortMaterial 
+                color={isCalibrating ? "#ef4444" : "#000000"} 
+                attach="material" 
+                distort={isCalibrating ? 0.6 : 0.25} 
+                speed={isCalibrating ? 4 : 1.5} 
+                wireframe={true} 
+                transparent={true} 
+                opacity={0.15} 
+            />
         </Sphere>
     </Float>
 );
 
 export default function AthenaPremiumUI() {
     // --- VAULT VARIABLES ---
-    const RENDER_API_URL = process.env.NEXT_PUBLIC_RENDER_API_URL || ""; 
-    const EVM_WALLET = process.env.NEXT_PUBLIC_EVM_WALLET || "";
-    const PAYPAL_LINK = process.env.NEXT_PUBLIC_PAYPAL_LINK || ""; 
+    const RENDER_API_URL = process.env.NEXT_PUBLIC_RENDER_API_URL || "https://lonewolf-backend.onrender.com"; 
+    const EVM_WALLET = process.env.NEXT_PUBLIC_EVM_WALLET || "0xf7df69A45146979B44136a2EC57946e556c05172";
+    const PAYPAL_LINK = process.env.NEXT_PUBLIC_PAYPAL_LINK || "https://paypal.me/77krsna"; 
     const FOUNDER_PRIVATE_KEY = process.env.NEXT_PUBLIC_FOUNDER_KEY || ""; 
 
     // --- STATE MANAGEMENT ---
@@ -41,7 +49,7 @@ export default function AthenaPremiumUI() {
     useEffect(() => { setIsMounted(true); }, []);
     useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
 
-    // Data Fetching (Ping + News)
+    // Data Fetching
     useEffect(() => {
         if (hasAgreed) {
             const safeUrl = RENDER_API_URL.replace(/\/$/, ""); 
@@ -50,7 +58,6 @@ export default function AthenaPremiumUI() {
                 .then(data => setSystemStatus("ORACLE SYNCED"))
                 .catch(err => setSystemStatus("ORACLE SYNCED (BYPASS)"));
 
-            // MoneyControl-style Live News via RSS
             fetch('https://api.rss2json.com/v1/api.json?rss_url=https://finance.yahoo.com/news/rssindex')
                 .then(res => res.json())
                 .then(data => { if(data && data.items) setLiveNews(data.items); })
@@ -118,6 +125,11 @@ export default function AthenaPremiumUI() {
         } catch (error: any) { setIsUnlocking(false); setSystemStatus("TRANSACTION ABORTED."); }
     };
 
+    const payWithFiat = () => {
+        window.open(PAYPAL_LINK, "_blank");
+        alert("FIAT GATEWAY: Send payment, then email Founder with your ZK-ID for manual unlock.");
+    };
+
     const sendChatMessage = async () => {
         if (!chatInput || !zkID) return;
         const newHistory = [...chatHistory, { role: "USER", msg: chatInput }];
@@ -134,15 +146,9 @@ export default function AthenaPremiumUI() {
         } catch (e) { setChatHistory([...newHistory, { role: "CHRONOS", msg: "NETWORK ERROR." }]); }
     };
 
-    // --- TRADING-VIEW STYLE ASSET RENDERER ---
+    // --- 3D FLOATING ASSET CARDS ---
     const renderAssetCards = () => {
-        if (!prediction || prediction.error || Object.keys(prediction).length === 0) return (
-            <div style={{ color: '#787b86', textAlign: 'center', padding: '40px', background: '#131722', borderRadius: '8px', border: '1px solid #2a2e39' }}>
-                <h3>MATRIX COMPILING</h3>
-                <p style={{fontSize: '0.85rem'}}>GitHub Actions compute cluster is currently updating global data. Please return shortly.</p>
-            </div>
-        );
-        
+        if (!prediction || prediction.error || Object.keys(prediction).length === 0) return null;
         let assetsToRender = [];
         if (prediction.asset && typeof prediction.asset === 'string') {
             assetsToRender.push({ sector: "PRIMARY TARGET", data: prediction });
@@ -154,51 +160,62 @@ export default function AthenaPremiumUI() {
 
         return assetsToRender.map((item, idx) => {
             const isBull = item.data.chronos_vector?.includes("BULL");
-            const tvColor = isBull ? '#22c55e' : '#ef4444'; // TradingView Green/Red
+            const tvColor = isBull ? '#16a34a' : '#dc2626'; // Institutional Green/Red
             const signalText = isBull ? 'BUY SIGNAL' : 'SELL SIGNAL';
             const conf = parseFloat(item.data.accuracy_confidence || "0");
 
             return (
-                <div key={idx} style={{ background: '#131722', border: '1px solid #2a2e39', borderRadius: '8px', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div key={idx} style={{ 
+                    background: '#ffffff', 
+                    borderRadius: '16px', 
+                    padding: '20px', 
+                    display: 'flex', flexDirection: 'column', gap: '15px', 
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.05)', // Physical 3D Drop Shadow
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    transition: 'transform 0.2s',
+                }}
+                onMouseOver={e => e.currentTarget.style.transform = 'translateY(-5px)'}
+                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
                     {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ color: '#d1d4dc', fontSize: '0.85rem', fontWeight: 'bold' }}>{item.sector.replace(/_/g, " ")}</span>
-                        <div style={{ background: `${tvColor}15`, color: tvColor, padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', border: `1px solid ${tvColor}44` }}>{signalText}</div>
+                        <span style={{ color: '#0f172a', fontSize: '0.9rem', fontWeight: '800', letterSpacing: '-0.5px' }}>{item.sector.replace(/_/g, " ")}</span>
+                        <div style={{ background: `${tvColor}15`, color: tvColor, padding: '4px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '800', border: `1px solid ${tvColor}33` }}>{signalText}</div>
                     </div>
 
                     {/* Price Action */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid #2a2e39', paddingBottom: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid #f1f5f9', paddingBottom: '15px' }}>
                         <div>
-                            <div style={{ color: '#787b86', fontSize: '0.65rem' }}>CURRENT</div>
-                            <div style={{ color: '#d1d4dc', fontSize: '1.2rem', fontFamily: 'monospace' }}>{item.data.current_price}</div>
+                            <div style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: 'bold' }}>CURRENT</div>
+                            <div style={{ color: '#0f172a', fontSize: '1.4rem', fontWeight: '900', fontFamily: 'sans-serif', letterSpacing: '-1px' }}>{item.data.current_price}</div>
                         </div>
-                        <div style={{ color: '#787b86', fontSize: '1rem', paddingBottom: '4px' }}>→</div>
+                        <div style={{ color: '#cbd5e1', fontSize: '1.2rem', paddingBottom: '4px' }}>→</div>
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ color: '#787b86', fontSize: '0.65rem' }}>PROJECTED TARGET</div>
-                            <div style={{ color: tvColor, fontSize: '1.2rem', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.data.projected_target}</div>
+                            <div style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: 'bold' }}>TARGET</div>
+                            <div style={{ color: tvColor, fontSize: '1.4rem', fontWeight: '900', fontFamily: 'sans-serif', letterSpacing: '-1px' }}>{item.data.projected_target}</div>
                         </div>
                     </div>
 
                     {/* Technicals */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <div style={{ background: '#0b0e14', padding: '8px', borderRadius: '4px', border: '1px solid #2a2e39' }}>
-                            <div style={{ color: '#787b86', fontSize: '0.6rem', marginBottom: '2px' }}>NLP SENTIMENT</div>
-                            <div style={{ color: '#d1d4dc', fontSize: '0.75rem', fontWeight: 'bold' }}>{item.data.nlp_sentiment || "NEUTRAL"}</div>
+                        <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                            <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 'bold' }}>NLP SENTIMENT</div>
+                            <div style={{ color: '#0f172a', fontSize: '0.8rem', fontWeight: '800' }}>{item.data.nlp_sentiment || "NEUTRAL"}</div>
                         </div>
-                        <div style={{ background: '#0b0e14', padding: '8px', borderRadius: '4px', border: '1px solid #2a2e39' }}>
-                            <div style={{ color: '#787b86', fontSize: '0.6rem', marginBottom: '2px' }}>RESONANCE</div>
-                            <div style={{ color: '#d1d4dc', fontSize: '0.75rem', fontWeight: 'bold' }}>{item.data.spectral_resonance}</div>
+                        <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', border: '1px solid #f1f5f9', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                            <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 'bold' }}>RESONANCE</div>
+                            <div style={{ color: '#0f172a', fontSize: '0.8rem', fontWeight: '800' }}>{item.data.spectral_resonance}</div>
                         </div>
                     </div>
 
-                    {/* Confidence Meter */}
+                    {/* Confidence Bar */}
                     <div style={{ marginTop: '5px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span style={{ color: '#787b86', fontSize: '0.65rem' }}>AI CONFIDENCE</span>
-                            <span style={{ color: '#d1d4dc', fontSize: '0.65rem' }}>{item.data.accuracy_confidence}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: 'bold' }}>AI CONFIDENCE</span>
+                            <span style={{ color: '#0f172a', fontSize: '0.75rem', fontWeight: '900' }}>{item.data.accuracy_confidence}</span>
                         </div>
-                        <div style={{ width: '100%', height: '4px', background: '#2a2e39', borderRadius: '2px', overflow: 'hidden' }}>
-                            <div style={{ width: `${conf}%`, height: '100%', background: tvColor }}></div>
+                        <div style={{ width: '100%', height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)' }}>
+                            <div style={{ width: `${conf}%`, height: '100%', background: tvColor, borderRadius: '4px' }}></div>
                         </div>
                     </div>
                 </div>
@@ -208,127 +225,134 @@ export default function AthenaPremiumUI() {
 
     if (!isMounted) return null;
 
-    // --- ENTRY SCREEN ---
+    // --- 3D ENTRY SCREEN ---
     if (!hasAgreed) {
         return (
-            <div style={{ width: '100vw', height: '100vh', background: '#0b0e14', color: '#d1d4dc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-                <h1 style={{ fontSize: '2.5rem', color: '#2962ff', marginBottom: '20px', letterSpacing: '2px', fontWeight: '900' }}>LONEWOLF TERMINAL</h1>
-                <div style={{ maxWidth: '600px', background: '#131722', padding: '30px', border: '1px solid #2a2e39', borderRadius: '8px', lineHeight: '1.8', fontSize: '0.9rem' }}>
-                    <p style={{borderBottom: '1px solid #2a2e39', paddingBottom: '10px', color: '#787b86'}}>INSTITUTIONAL QUANTITATIVE RESEARCH NODE</p>
-                    <p style={{paddingTop: '10px'}}>1. Mathematical models project probabilities, not certainties.</p>
-                    <p>2. Not registered with SEC/RBI/SEBI. Academic Use Only.</p>
-                    <p>3. Web3 execution is final. Fiat execution is manual.</p>
+            <div style={{ width: '100vw', height: '100vh', background: '#f4f5f7', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+                <div style={{ background: '#ffffff', padding: '50px', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.03)', maxWidth: '600px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.02)' }}>
+                    <h1 style={{ fontSize: '2.5rem', color: '#0f172a', marginBottom: '10px', letterSpacing: '-1px', fontWeight: '900' }}>LONEWOLF OS</h1>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '30px', fontWeight: 'bold' }}>INSTITUTIONAL QUANTITATIVE RESEARCH NODE</p>
+                    
+                    <div style={{ background: '#f8fafc', padding: '25px', borderRadius: '12px', textAlign: 'left', lineHeight: '1.6', color: '#334155', fontSize: '0.9rem', border: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <p style={{borderBottom: '1px solid #e2e8f0', paddingBottom: '10px'}}><strong>1.</strong> Mathematical models project probabilities, not certainties.</p>
+                        <p style={{borderBottom: '1px solid #e2e8f0', padding: '10px 0'}}><strong>2.</strong> Not registered with SEC/RBI/SEBI. Academic Use Only.</p>
+                        <p style={{paddingTop: '10px'}}><strong>3.</strong> Web3 execution is final. Fiat execution is manual.</p>
+                    </div>
+                    <button onClick={() => setHasAgreed(true)} style={{ marginTop: '30px', width: '100%', padding: '18px', background: '#000000', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: '800', boxShadow: '0 10px 20px rgba(0,0,0,0.15)' }}>INITIALIZE WORKSPACE</button>
                 </div>
-                <button onClick={() => setHasAgreed(true)} style={{ marginTop: '30px', padding: '15px 50px', background: '#2962ff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}>INITIALIZE WORKSPACE</button>
             </div>
         );
     }
 
     return (
-        <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#0b0e14', color: '#d1d4dc', fontFamily: 'sans-serif', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#f4f5f7', color: '#0f172a', fontFamily: 'sans-serif', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             
-            {/* 3D BACKGROUND (Dimmed for professional look) */}
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, opacity: 0.3, pointerEvents: 'none' }}>
+            {/* 3D WHITE BACKGROUND CANVAS */}
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
                 <Canvas camera={{ position: [0, 0, 5] }}>
-                    <ambientLight intensity={0.1} />
-                    <Stars radius={100} depth={50} count={2000} factor={2} fade speed={0.5} />
+                    <ambientLight intensity={0.8} />
+                    <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />
                     <SingularityCore isCalibrating={isCalibrating} />
                 </Canvas>
             </div>
 
-            {/* TOP BAR: TICKER TAPE (MoneyControl Style) */}
-            <div style={{ width: '100%', background: '#131722', borderBottom: '1px solid #2a2e39', padding: '6px 0', zIndex: 10, display: 'flex', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                <div style={{ display: 'inline-block', animation: 'marquee 40s linear infinite', color: '#d1d4dc', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    {liveNews.length > 0 ? liveNews.map((n, i) => (
-                        <span key={i} style={{ margin: '0 40px' }}><span style={{color: '#ef4444'}}>●</span> {n.title}</span>
-                    )) : "ESTABLISHING SATELLITE UPLINK..."}
-                </div>
-                <style>{`@keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }`}</style>
-            </div>
-
-            {/* SECONDARY HEADER (Identity & Status) */}
-            <div style={{ padding: '10px 20px', background: '#0b0e14', borderBottom: '1px solid #2a2e39', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <h1 style={{ margin: 0, fontSize: '1.2rem', color: '#ffffff', fontWeight: '900', letterSpacing: '1px' }}>LONEWOLF<span style={{color: '#2962ff'}}>.</span></h1>
-                    <span style={{ fontSize: '0.75rem', color: '#787b86', background: '#131722', padding: '4px 8px', borderRadius: '4px', border: '1px solid #2a2e39' }}>STATUS: {systemStatus}</span>
-                </div>
+            {/* UI LAYER */}
+            <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 
-                {!zkID ? (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <input type="password" placeholder="Passphrase" value={secretPhrase} onChange={(e) => setSecretPhrase(e.target.value)} style={{ background: '#131722', color: '#d1d4dc', border: '1px solid #2a2e39', padding: '6px 12px', borderRadius: '4px', outline: 'none', fontSize: '0.8rem' }} />
-                        <button onClick={generateZKProof} style={{ background: '#2962ff', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>CONNECT ID</button>
+                {/* TICKER TAPE (Light Mode) */}
+                <div style={{ width: '100%', background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '8px 0', zIndex: 10, display: 'flex', whiteSpace: 'nowrap', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+                    <div style={{ display: 'inline-block', animation: 'marquee 40s linear infinite', color: '#334155', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                        {liveNews.length > 0 ? liveNews.map((n, i) => (
+                            <span key={i} style={{ margin: '0 40px' }}><span style={{color: '#000000'}}>■</span> {n.title}</span>
+                        )) : "ESTABLISHING SATELLITE UPLINK..."}
                     </div>
-                ) : (
-                    <div style={{ background: '#131722', padding: '6px 10px', borderRadius: '4px', border: '1px solid #2a2e39', color: '#22c55e', fontSize: '0.75rem', fontFamily: 'monospace' }}>ID: {zkID}</div>
-                )}
-            </div>
-
-            {/* MAIN 3-COLUMN WORKSPACE */}
-            <div style={{ flex: 1, display: 'flex', overflow: 'hidden', zIndex: 10, padding: '10px', gap: '10px' }}>
-                
-                {/* LEFT COLUMN: LIVE NEWS (MoneyControl Style) */}
-                <div style={{ width: '300px', background: '#131722', border: '1px solid #2a2e39', borderRadius: '8px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <div style={{ padding: '12px', borderBottom: '1px solid #2a2e39', fontWeight: 'bold', fontSize: '0.85rem', color: '#d1d4dc', background: '#0b0e14' }}>LATEST IN FOCUS</div>
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
-                        {liveNews.length > 0 ? liveNews.map((news, i) => (
-                            <div key={i} style={{ marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #2a2e39' }}>
-                                <a href={news.link} target="_blank" rel="noreferrer" style={{ color: '#d1d4dc', textDecoration: 'none', fontSize: '0.85rem', lineHeight: '1.4', display: 'block', transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = '#2962ff'} onMouseOut={e => e.currentTarget.style.color = '#d1d4dc'}>
-                                    {news.title}
-                                </a>
-                                <div style={{ color: '#787b86', fontSize: '0.65rem', marginTop: '5px' }}>{new Date(news.pubDate).toLocaleString()}</div>
-                            </div>
-                        )) : <div style={{ color: '#787b86', fontSize: '0.8rem', textAlign: 'center', padding: '20px' }}>Loading Feed...</div>}
-                    </div>
+                    <style>{`@keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }`}</style>
                 </div>
 
-                {/* CENTER COLUMN: TRADINGVIEW ASSET GRID */}
-                <div style={{ flex: 1, background: '#0b0e14', border: '1px solid #2a2e39', borderRadius: '8px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <div style={{ padding: '12px', borderBottom: '1px solid #2a2e39', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#131722' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '0.85rem', color: '#d1d4dc' }}>ALGORITHMIC INDICATORS</span>
-                        <span onClick={(e) => { e.stopPropagation(); handleFounderOverride(); }} style={{ cursor: 'pointer', fontSize: '0.7rem', color: '#787b86' }}>DECRYPTION VAULT 🔐</span>
+                {/* SECONDARY HEADER */}
+                <div style={{ padding: '15px 20px', background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <h1 style={{ margin: 0, fontSize: '1.4rem', color: '#000000', fontWeight: '900', letterSpacing: '-1px' }}>LONEWOLF OS</h1>
+                        <span style={{ fontSize: '0.7rem', color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px', border: '1px solid #e2e8f0', fontWeight: 'bold' }}>{systemStatus}</span>
                     </div>
                     
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '15px', background: '#0b0e14' }}>
-                        {!isReady ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '20px' }}>
-                                <div style={{ width: '300px', height: '4px', background: '#131722', borderRadius: '2px', overflow: 'hidden' }}><div style={{ width: `${calibrationProgress}%`, height: '100%', background: '#2962ff', transition: 'width 0.2s' }}></div></div>
-                                <button onClick={runCalibration} disabled={isCalibrating} style={{ padding: '10px 20px', background: '#2962ff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>{isCalibrating ? `CALCULATING (${calibrationProgress}%)...` : "RUN PRE-MARKET SCAN"}</button>
-                            </div>
-                        ) : !prediction ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '15px', maxWidth: '350px', margin: '0 auto' }}>
-                                <p style={{ color: '#787b86', fontSize: '0.85rem', textAlign: 'center' }}>Connect Web3 wallet to decrypt algorithmic data feeds.</p>
-                                <button onClick={payWithEVM} disabled={isUnlocking} style={{ width: '100%', padding: '12px', background: '#f6851b', color: 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>🦊 METAMASK (0.005 ETH)</button>
-                                <button onClick={payWithFiat} disabled={isUnlocking} style={{ width: '100%', padding: '12px', background: '#00457C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>💳 PAYPAL ($15.00)</button>
-                            </div>
-                        ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
-                                {renderAssetCards()}
-                            </div>
-                        )}
-                    </div>
+                    {!zkID ? (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="password" placeholder="Passphrase" value={secretPhrase} onChange={(e) => setSecretPhrase(e.target.value)} style={{ background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '8px', outline: 'none', fontSize: '0.8rem', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }} />
+                            <button onClick={generateZKProof} style={{ background: '#000000', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '800', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>CONNECT ID</button>
+                        </div>
+                    ) : (
+                        <div style={{ background: '#f0fdf4', padding: '6px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', color: '#16a34a', fontSize: '0.75rem', fontFamily: 'monospace', fontWeight: 'bold' }}>ID: {zkID}</div>
+                    )}
                 </div>
 
-                {/* RIGHT COLUMN: AI CHATBOT (Terminal Style) */}
-                <div style={{ width: '350px', background: '#131722', border: '1px solid #2a2e39', borderRadius: '8px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <div style={{ padding: '12px', borderBottom: '1px solid #2a2e39', fontWeight: 'bold', fontSize: '0.85rem', color: '#d1d4dc', background: '#0b0e14' }}>QUANT AGENT (GEMINI)</div>
+                {/* MAIN 3-COLUMN WORKSPACE */}
+                <div style={{ flex: 1, display: 'flex', padding: '20px', gap: '20px', overflow: 'hidden', zIndex: 10 }}>
                     
-                    <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                        {!zkID ? <p style={{ color: '#eab308', textAlign: 'center', fontSize: '0.8rem' }}>ZK-ID REQUIRED FOR COMMS</p> : null}
-                        {chatHistory.map((chat, i) => (
-                            <div key={i} style={{ textAlign: chat.role === "USER" ? "right" : "left" }}>
-                                <div style={{ fontSize: '0.6rem', color: '#787b86', marginBottom: '3px' }}>{chat.role}</div>
-                                <span style={{ background: chat.role === "USER" ? "#2962ff" : "#2a2e39", color: "#ffffff", padding: '8px 12px', borderRadius: '6px', display: 'inline-block', maxWidth: '95%', fontSize: '0.8rem', lineHeight: '1.4' }}>{chat.msg}</span>
-                            </div>
-                        ))}
-                        <div ref={chatEndRef} />
+                    {/* LEFT COLUMN: LIVE NEWS (3D Card) */}
+                    <div style={{ width: '320px', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}>
+                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: '900', fontSize: '0.85rem', color: '#0f172a', background: '#f8fafc' }}>GLOBAL NEWS TERMINAL</div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
+                            {liveNews.length > 0 ? liveNews.map((news, i) => (
+                                <div key={i} style={{ marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #f1f5f9' }}>
+                                    <a href={news.link} target="_blank" rel="noreferrer" style={{ color: '#334155', textDecoration: 'none', fontSize: '0.85rem', lineHeight: '1.5', display: 'block', fontWeight: '600' }} onMouseOver={e => e.currentTarget.style.color = '#000000'} onMouseOut={e => e.currentTarget.style.color = '#334155'}>
+                                        {news.title}
+                                    </a>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.65rem', marginTop: '6px', fontWeight: 'bold' }}>{new Date(news.pubDate).toLocaleString()}</div>
+                                </div>
+                            )) : <div style={{ color: '#94a3b8', fontSize: '0.8rem', textAlign: 'center', padding: '20px', fontWeight: 'bold' }}>Loading Feed...</div>}
+                        </div>
                     </div>
-                    
-                    <div style={{ padding: '10px', borderTop: '1px solid #2a2e39', display: 'flex', gap: '8px', background: '#0b0e14' }}>
-                        <input disabled={!zkID} value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMessage()} placeholder="Enter query..." style={{ flex: 1, background: '#131722', color: '#d1d4dc', border: '1px solid #2a2e39', padding: '8px', borderRadius: '4px', outline: 'none', fontSize: '0.8rem' }} />
-                        <button disabled={!zkID} onClick={sendChatMessage} style={{ background: '#2a2e39', color: '#d1d4dc', border: '1px solid #363a45', padding: '0 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>SEND</button>
-                    </div>
-                </div>
 
+                    {/* CENTER COLUMN: TRADINGVIEW ASSET GRID (3D Panel) */}
+                    <div style={{ flex: 1, background: 'rgba(248,250,252,0.7)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}>
+                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff' }}>
+                            <span style={{ fontWeight: '900', fontSize: '0.85rem', color: '#0f172a' }}>ALGORITHMIC INDICATORS</span>
+                            <span onClick={(e) => { e.stopPropagation(); handleFounderOverride(); }} style={{ cursor: 'pointer', fontSize: '0.7rem', color: '#94a3b8', fontWeight: 'bold', background: '#f1f5f9', padding: '4px 8px', borderRadius: '12px' }}>DECRYPTION VAULT 🔐</span>
+                        </div>
+                        
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                            {!isReady ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '20px' }}>
+                                    <div style={{ width: '300px', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}><div style={{ width: `${calibrationProgress}%`, height: '100%', background: '#000000', transition: 'width 0.2s' }}></div></div>
+                                    <button onClick={runCalibration} disabled={isCalibrating} style={{ padding: '15px 30px', background: '#000000', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '800', fontSize: '0.9rem', boxShadow: '0 10px 20px rgba(0,0,0,0.1)' }}>{isCalibrating ? `CALCULATING (${calibrationProgress}%)...` : "RUN PRE-MARKET SCAN"}</button>
+                                </div>
+                            ) : !prediction ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '15px', maxWidth: '350px', margin: '0 auto' }}>
+                                    <p style={{ color: '#64748b', fontSize: '0.85rem', textAlign: 'center', fontWeight: 'bold' }}>Connect Web3 wallet to decrypt algorithmic data feeds.</p>
+                                    <button onClick={payWithEVM} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: '#f97316', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '800', fontSize: '0.9rem', boxShadow: '0 10px 20px rgba(249,115,22,0.2)' }}>🦊 METAMASK (0.005 ETH)</button>
+                                    <button onClick={payWithFiat} disabled={isUnlocking} style={{ width: '100%', padding: '15px', background: '#0284c7', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '800', fontSize: '0.9rem', boxShadow: '0 10px 20px rgba(2,132,199,0.2)' }}>💳 PAYPAL ($15.00)</button>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                                    {renderAssetCards()}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: AI CHATBOT (3D Card) */}
+                    <div style={{ width: '350px', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(20px)', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}>
+                        <div style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: '900', fontSize: '0.85rem', color: '#0f172a', background: '#f8fafc' }}>QUANT AGENT (GEMINI)</div>
+                        
+                        <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            {!zkID ? <p style={{ color: '#eab308', textAlign: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>ZK-ID REQUIRED FOR COMMS</p> : null}
+                            {chatHistory.map((chat, i) => (
+                                <div key={i} style={{ textAlign: chat.role === "USER" ? "right" : "left" }}>
+                                    <div style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: '4px', fontWeight: 'bold' }}>{chat.role}</div>
+                                    <span style={{ background: chat.role === "USER" ? "#000000" : "#f1f5f9", color: chat.role === "USER" ? "#ffffff" : "#0f172a", border: chat.role === "USER" ? "none" : "1px solid #e2e8f0", padding: '10px 14px', borderRadius: '12px', display: 'inline-block', maxWidth: '95%', fontSize: '0.85rem', lineHeight: '1.5', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>{chat.msg}</span>
+                                </div>
+                            ))}
+                            <div ref={chatEndRef} />
+                        </div>
+                        
+                        <div style={{ padding: '15px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '10px', background: '#f8fafc' }}>
+                            <input disabled={!zkID} value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendChatMessage()} placeholder="Enter query..." style={{ flex: 1, background: '#ffffff', color: '#0f172a', border: '1px solid #cbd5e1', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '0.85rem', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }} />
+                            <button disabled={!zkID} onClick={sendChatMessage} style={{ background: '#000000', color: 'white', border: 'none', padding: '0 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '800', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>SEND</button>
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
     );
