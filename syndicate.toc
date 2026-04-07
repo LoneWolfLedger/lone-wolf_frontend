@@ -1,0 +1,3 @@
+\contentsline {section}{Part I --- LaTeX Beamer-Style Slide Deck}{2}{Doc-Start}%
+\contentsline {section}{Part II --- Aggressive VC Memo}{6}{Doc-Start}%
+\contentsline {section}{Part III --- Institutional Whitepaper}{8}{Doc-Start}%
