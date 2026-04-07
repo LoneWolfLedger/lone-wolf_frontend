@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react';
 import Web3Paywall from './components/Web3Paywall';
 import AlphaMatrix from './components/AlphaMatrix';
