@@ -49,7 +49,7 @@ export default function Dashboard() {
     };
 
     const unlockAI = async () => {
-        const attempt = prompt("ENTER MASTER KEY (021282):");
+        const attempt = prompt("MASTER KEY ");
         if (!attempt) return;
         try {
             const res = await fetch(`${RENDER_API_URL.replace(/\/$/, "")}/oracle`, {
